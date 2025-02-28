@@ -1,8 +1,11 @@
 const express = require('express')
 const router = express.Router();
 
-const trmnlcontroller = require('../controllers/trmnlcontroller');
+const trmnlController = require('../controllers/trmnlController');
+const trmnlInstallSuccessController = require('../controllers/trmnlInstallSuccessController');
 
-router.get('/', trmnlcontroller);
+router.get('/', trmnlController);
+
+//router.get('/installation_success', trmnlInstallSuccessController)
 
 module.exports = router

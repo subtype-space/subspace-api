@@ -4,7 +4,8 @@ import express, { Request, Response, Router } from 'express';
 
 import trmnlRouter from './v1/routers/trmnlRouter.js'
 import statusRouter from './v1/routers/statusRouter.js'
-import mcpServer from './v1/mcp_servers/weather.js';
+import weatherRouter from './v1/routers/weatherRouter.js'
+
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const server = express();
@@ -18,6 +19,8 @@ server.get('/v1/trmnl', trmnlRouter);
 // // catch all/health check
 server.get('/health', statusRouter)
 server.get('/', statusRouter)
+
+server.use('/v1/weather', weatherRouter);
 
 
 server.listen(PORT, () => {

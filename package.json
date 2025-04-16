@@ -2,11 +2,6 @@
   "name": "subspace-api",
   "version": "1.0.0",
   "description": "API service for subtype.space",
-  "main": "server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  },
   "repository": {
     "type": "git",
     "url": "ssh://git@ansible.subtype.internal:2424/subtype/subspace-api.git"
@@ -14,10 +9,28 @@
   "keywords": [
     "API"
   ],
+  "type": "module",
+  "bin": {
+    "weather": "./build/server.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod 755 build/server.js"
+  },
+  "files": [
+    "build"
+  ],
   "author": "subtype",
   "license": "ISC",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.9.0",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.14.1",
+    "express": "^5.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }

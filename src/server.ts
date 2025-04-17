@@ -30,46 +30,44 @@ const transports: {[sessionId: string]: SSEServerTransport} = {};
 
 // Register weather tools
 mcpServer.tool(
-    "get-alerts",
-    "Get weather alerts for a state",
-    {
-      state: z.string().length(2).describe("Two-letter state code (e.g. CA, NY)"),
-    },
-    async ({ state }) => {
-      const alertsText = await getAlerts({ state })
-      return {
-          content: [
-            {
-              type: "text",
-              text: alertsText,
-            },
-          ],
-        };
-    }
-  );
+  "get-alerts",
+  "Get weather alerts for a state",
+  {
+    state: z.string().length(2).describe("Two-letter state code (e.g. CA, NY)"),
+  },
+  async ({ state }) => {
+    const alertsText = await getAlerts({ state })
+    return {
+      content: [
+        {
+          type: "text",
+          text: alertsText,
+        },
+      ],
+    };
+  }
+);
   
-  mcpServer.tool(
-    "get-forecast",
-    "Get weather forecast for a location",
-    {
-      latitude: z.number().min(-90).max(90).describe("Latitude of the location"),
-      longitude: z.number().min(-180).max(180).describe("Longitude of the location"),
-    },
-    async ({ latitude, longitude }) => {
-      const forecastText = await getForecast({ latitude, longitude })
-      return {
-          content: [
-            {
-              type: "text",
-              text: forecastText,
-            },
-          ],
-        };
-    }
-  );
+mcpServer.tool(
+  "get-forecast",
+  "Get weather forecast for a location",
+  {
+    latitude: z.number().min(-90).max(90).describe("Latitude of the location"),
+    longitude: z.number().min(-180).max(180).describe("Longitude of the location"),
+  },
+  async ({ latitude, longitude }) => {
+    const forecastText = await getForecast({ latitude, longitude })
+    return {
+      content: [
+        {
+          type: "text",
+          text: forecastText,
+        },
+      ],
+    };
+  }
+);
     
-
-
 server.get("/sse", async (_: Request, res: Response) => {
   const transport = new SSEServerTransport('/messages', res);
   transports[transport.sessionId] = transport;
@@ -80,15 +78,14 @@ server.get("/sse", async (_: Request, res: Response) => {
 });
 
 server.post("/messages", async (req: Request, res: Response) => {
-    const sessionId = req.query.sessionId as string;
-    const transport = transports[sessionId];
-    if (transport) {
-      await transport.handlePostMessage(req, res);
-    } else {
-      res.status(400).send('No transport found for sessionId');
-    }
-  });
-
+  const sessionId = req.query.sessionId as string;
+  const transport = transports[sessionId];
+  if (transport) {
+    await transport.handlePostMessage(req, res);
+  } else {
+    res.status(400).send('No transport found for sessionId');
+  }
+});
 
 // Declare regular REST API routing
 server.use('/', express.json(), statusRouter)

@@ -10,11 +10,9 @@
     "API"
   ],
   "type": "module",
-  "bin": {
-    "weather": "./build/server.js"
-  },
   "scripts": {
-    "build": "tsc && chmod 755 build/server.js"
+    "build": "tsc && chmod 755 build/server.js",
+    "start": "node build/server.js"
   },
   "files": [
     "build"

@@ -1,39 +1,101 @@
 import dotenv from 'dotenv'
 dotenv.config()
-import express, { Request, Response, Router } from 'express';
-
+import express, { Request, Response } from "express";
 import trmnlRouter from './v1/routers/trmnlRouter.js'
 import statusRouter from './v1/routers/statusRouter.js'
-import weatherRouter from './v1/routers/weatherRouter.js'
 
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+// MCP import shenanigans
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { getAlerts, getForecast } from './v1/mcp_servers/weather.js'
+import { z } from "zod";
+
+const mcpServer = new McpServer({
+  name: "example-server",
+  version: "1.0.0",
+  capabilities: {
+    resources: {},
+    tools: {},
+  },
+});
 
 const server = express();
-server.use(express.json());
 
 
 const PORT = process.env.PORT || 9595;
 const ACTIVE_VERSION = process.env.API_VERSION || "v1";
-  
-server.get('/v1/trmnl', trmnlRouter);
-// // catch all/health check
-server.get('/health', statusRouter)
-server.get('/', statusRouter)
 
-server.use('/v1/weather', weatherRouter);
+// Register and enable model context protocol tools
+const transports: {[sessionId: string]: SSEServerTransport} = {};
+
+// Register weather tools
+mcpServer.tool(
+    "get-alerts",
+    "Get weather alerts for a state",
+    {
+      state: z.string().length(2).describe("Two-letter state code (e.g. CA, NY)"),
+    },
+    async ({ state }) => {
+      const alertsText = await getAlerts({ state })
+      return {
+          content: [
+            {
+              type: "text",
+              text: alertsText,
+            },
+          ],
+        };
+    }
+  );
+  
+  mcpServer.tool(
+    "get-forecast",
+    "Get weather forecast for a location",
+    {
+      latitude: z.number().min(-90).max(90).describe("Latitude of the location"),
+      longitude: z.number().min(-180).max(180).describe("Longitude of the location"),
+    },
+    async ({ latitude, longitude }) => {
+      const forecastText = await getForecast({ latitude, longitude })
+      return {
+          content: [
+            {
+              type: "text",
+              text: forecastText,
+            },
+          ],
+        };
+    }
+  );
+    
+
+
+server.get("/sse", async (_: Request, res: Response) => {
+  const transport = new SSEServerTransport('/messages', res);
+  transports[transport.sessionId] = transport;
+  res.on("close", () => {
+    delete transports[transport.sessionId];
+  });
+  await mcpServer.connect(transport);
+});
+
+server.post("/messages", async (req: Request, res: Response) => {
+    const sessionId = req.query.sessionId as string;
+    const transport = transports[sessionId];
+    if (transport) {
+      await transport.handlePostMessage(req, res);
+    } else {
+      res.status(400).send('No transport found for sessionId');
+    }
+  });
+
+
+// Declare regular REST API routing
+server.use('/', express.json(), statusRouter)
+server.use('/v1/trmnl', express.json(), trmnlRouter);
+server.use('/health', express.json(), statusRouter)
 
 
 server.listen(PORT, () => {
     console.log("subspace API now listening on PORT:", PORT);
-});
-
-async function main() {
-  const transport = new StdioServerTransport();
-  await mcpServer.connect(transport);
-  console.error("Weather MCP Server running on stdio");
-}
-
-main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
 });

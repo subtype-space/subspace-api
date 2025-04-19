@@ -9,6 +9,7 @@ async function makeNWSRequest<T>(url: string): Promise<T | null> {
     Accept: "application/geo+json",
   };
 
+  console.log("Requesting url:", url)
   try {
     const response = await fetch(url, { headers });
     if (!response.ok) {
@@ -17,6 +18,7 @@ async function makeNWSRequest<T>(url: string): Promise<T | null> {
     return (await response.json()) as T;
   } catch (error) {
     console.error("Error making NWS request:", error);
+    console.error(url)
     return null;
   }
 }

@@ -11,7 +11,7 @@ import { getAlerts, getForecast } from './v1/mcp_servers/weather.js'
 import { z } from "zod";
 
 const mcpServer = new McpServer({
-  name: "example-server",
+  name: "subspace-mcp-server",
   version: "1.0.0",
   capabilities: {
     resources: {},
@@ -31,7 +31,7 @@ const transports: {[sessionId: string]: SSEServerTransport} = {};
 // Register weather tools
 mcpServer.tool(
   "get-alerts",
-  "Get weather alerts for a state",
+  "Retrieves active weather alerts for a specific US state (e.g. tornado watches, heat advisories).",
   {
     state: z.string().length(2).describe("Two-letter state code (e.g. CA, NY)"),
   },
@@ -50,7 +50,7 @@ mcpServer.tool(
   
 mcpServer.tool(
   "get-forecast",
-  "Get weather forecast for a location",
+  "Provides a detailed 7-day weather forecast based on latitude and longitude.",
   {
     latitude: z.number().min(-90).max(90).describe("Latitude of the location"),
     longitude: z.number().min(-180).max(180).describe("Longitude of the location"),
@@ -67,6 +67,8 @@ mcpServer.tool(
     };
   }
 );
+
+
     
 server.get("/sse", async (_: Request, res: Response) => {
   const transport = new SSEServerTransport('/messages', res);

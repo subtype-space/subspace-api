@@ -11,6 +11,8 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { getAlerts, getForecast } from './v1/mcp_servers/weather.js'
 import { z } from "zod";
 
+
+logger.info("Initializing MCP server...")
 const mcpServer = new McpServer({
   name: "subspace-mcp-server",
   version: "1.0.0",
@@ -19,14 +21,16 @@ const mcpServer = new McpServer({
     tools: {},
   },
 });
+logger.debug(mcpServer)
 
 const server = express();
 const PORT = process.env.PORT || 9595;
 const ACTIVE_VERSION = process.env.API_VERSION || "v1";
-
 // Register and enable model context protocol tools
 const transports: {[sessionId: string]: SSEServerTransport} = {};
+logger.debug(transports)
 
+logger.info("Registering tools with MCP server...")
 // Register weather tools
 mcpServer.tool(
   "get-alerts",
@@ -87,6 +91,7 @@ server.post("/messages", async (req: Request, res: Response) => {
   }
 });
 
+logger.info("Initializing routes...")
 // Declare regular REST API routing
 server.use('/', express.json(), statusRouter)
 server.use('/v1/trmnl', express.json(), trmnlRouter);
@@ -95,5 +100,6 @@ server.use('/health', express.json(), statusRouter)
 
 server.listen(PORT, () => {
   logger.info(`Using log level: ${process.env.LOG_LEVEL || 'info'}`)
+  logger.info("Using API version:", ACTIVE_VERSION)
   logger.info("subspace API now listening on PORT:", PORT);
 });

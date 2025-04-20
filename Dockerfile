@@ -1,5 +1,5 @@
 FROM node:22.10 AS base
- 
+
 USER node
 WORKDIR /opt/api
 RUN chown -R node:node /opt/api

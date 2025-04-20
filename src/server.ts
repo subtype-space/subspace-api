@@ -3,6 +3,7 @@ dotenv.config()
 import express, { Request, Response } from "express";
 import trmnlRouter from './v1/routers/trmnlRouter.js'
 import statusRouter from './v1/routers/statusRouter.js'
+import { logger } from './utils/logger.js';
 
 // MCP import shenanigans
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -20,8 +21,6 @@ const mcpServer = new McpServer({
 });
 
 const server = express();
-
-
 const PORT = process.env.PORT || 9595;
 const ACTIVE_VERSION = process.env.API_VERSION || "v1";
 
@@ -68,12 +67,11 @@ mcpServer.tool(
   }
 );
 
-
-    
 server.get("/sse", async (_: Request, res: Response) => {
   const transport = new SSEServerTransport('/messages', res);
   transports[transport.sessionId] = transport;
   res.on("close", () => {
+    logger.debug("Closing connection")
     delete transports[transport.sessionId];
   });
   await mcpServer.connect(transport);
@@ -96,5 +94,6 @@ server.use('/health', express.json(), statusRouter)
 
 
 server.listen(PORT, () => {
-    console.log("subspace API now listening on PORT:", PORT);
+  logger.info(`Using log level: ${process.env.LOG_LEVEL || 'info'}`)
+  logger.info("subspace API now listening on PORT:", PORT);
 });

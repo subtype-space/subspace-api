@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { logger } from '../../utils/logger.js';
 
 interface TrmnlTokenResponse {
   access_token: string;
@@ -6,7 +7,7 @@ interface TrmnlTokenResponse {
 }
 
 const trmnlController = async (request: Request, response: Response): Promise<void> => {
-  console.log('Accessed /trmnl');
+  logger.debug('Accessed /trmnl');
   const TRMNL_CLIENT_ID = process.env.TRMNL_CLIENT_ID || "null-client";
   const TRMNL_CLIENT_SECRET = process.env.TRMNL_CLIENT_SECRET;
 
@@ -30,7 +31,7 @@ const trmnlController = async (request: Request, response: Response): Promise<vo
     grant_type: "authorization_code",
   };
 
-  console.log("Validating token from TRMNL");
+  logger.debug("Validating token from TRMNL");
   try {
     const trmnl_response = await fetch("https://usetrmnl.com/oauth/token", {
       method: "POST",
@@ -48,8 +49,8 @@ const trmnlController = async (request: Request, response: Response): Promise<vo
     const trmnl_data = await trmnl_response.json() as TrmnlTokenResponse;
     const accessToken = trmnl_data.access_token;
 
-    console.log("Fetch access token of", accessToken);
-    console.log("Redirecting user");
+    logger.debug("Fetch access token of", accessToken);
+    logger.debug("Redirecting user");
     
     if (installation_callback_url) {
       response.redirect(installation_callback_url);
@@ -57,7 +58,7 @@ const trmnlController = async (request: Request, response: Response): Promise<vo
       response.status(400).json({ message: "Missing installation callback URL" });
     }
   } catch (error) {
-    console.error("Error during TRMNL token validation:", error);
+    logger.error("Error during TRMNL token validation:", error);
     response.status(500).json({ message: "Internal server error during token validation" });
   }
 };

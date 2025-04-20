@@ -1,3 +1,5 @@
+import { logger } from "../../utils/logger.js";
+
 // Prob best to move to eventual utils folder since MCP does not directly interact with this
 // but uses it as helper methods.
 const NWS_API_BASE = "https://api.weather.gov";
@@ -9,7 +11,7 @@ async function makeNWSRequest<T>(url: string): Promise<T | null> {
     Accept: "application/geo+json",
   };
 
-  console.log("Requesting url:", url)
+  logger.debug("Requesting url:", url)
   try {
     const response = await fetch(url, { headers });
     if (!response.ok) {
@@ -17,8 +19,8 @@ async function makeNWSRequest<T>(url: string): Promise<T | null> {
     }
     return (await response.json()) as T;
   } catch (error) {
-    console.error("Error making NWS request:", error);
-    console.error(url)
+    logger.error("Error making NWS request:", error);
+    logger.error(url)
     return null;
   }
 }

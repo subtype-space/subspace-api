@@ -9,6 +9,7 @@ import { logger } from './utils/logger.js';
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { getAlerts, getForecast } from './v1/mcp_servers/weather.js'
+import { getStocks, getStockDetails } from './v1/mcp_servers/stocks.js';
 import { z } from "zod";
 
 
@@ -45,11 +46,11 @@ mcpServer.tool(
         {
           type: "text",
           text: alertsText,
-        },
-      ],
-    };
+        }
+      ]
+    }
   }
-);
+)
   
 mcpServer.tool(
   "get-forecast",
@@ -65,9 +66,49 @@ mcpServer.tool(
         {
           type: "text",
           text: forecastText,
-        },
-      ],
-    };
+        }
+      ]
+    }
+  }
+)
+
+mcpServer.tool(
+  "get-stock",
+  "Provides stock information (price, name, percent change) for one or more stocks. Ticker names must be provided in all caps, with no special characters.",
+  {
+    stocks: z.array(z.string().min(1).max(5).regex(/^[A-Z]+$/, "Stock tickers must be uppercase letters and no special characters").describe("A valid stock ticker symbol"))
+      .min(1).max(50).describe("A list of one or more stock ticker symbols (e.g. AAPL, AMD")
+  },
+  async ({ stocks }) => {
+    const stockText = await getStocks({ stocks })
+    return {
+      content: [
+        {
+          type: "text",
+          text: stockText
+        }
+      ]
+    }
+  }
+);
+
+mcpServer.tool(
+  "get-stock-detailed",
+  "Provides *detailed* stock information, primarily news titles for sentiment analysis (price, name, percent change, news) for one or more stocks. Ticker names must be provided in all caps, with no special characters.",
+  {
+    stocks: z.array(z.string().min(1).max(5).regex(/^[A-Z]+$/, "Stock tickers must be uppercase letters and no special characters").describe("A valid stock ticker symbol"))
+      .min(1).max(50).describe("A list of one or more stock ticker symbols (e.g. AAPL, AMD")
+  },
+  async ({ stocks }) => {
+    const stockText = await getStockDetails({ stocks })
+    return {
+      content: [
+        {
+          type: "text",
+          text: stockText
+        }
+      ]
+    }
   }
 );
 

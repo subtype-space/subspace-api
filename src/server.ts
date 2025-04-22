@@ -9,8 +9,8 @@ import { logger } from './utils/logger.js';
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { getAlerts, getForecast } from './v1/mcp_servers/weather.js'
-import { getStocks, getStockDetails } from './v1/mcp_servers/stocks.js';
 import { z } from "zod";
+import { getStockDetails } from './v1/mcp_servers/stocks.js';
 
 
 logger.info("Initializing MCP server...")
@@ -122,5 +122,6 @@ server.use('/health', express.json(), statusRouter)
 server.listen(PORT, () => {
   logger.info(`Using log level: ${process.env.LOG_LEVEL || 'info'}`)
   logger.info("Using API version:", ACTIVE_VERSION)
+  logger.debug("MCP Server debug:", mcpServer)
   logger.info("subspace API now listening on PORT:", PORT);
 });

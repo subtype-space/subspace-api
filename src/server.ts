@@ -136,6 +136,7 @@ mcpServer.tool(
   },
   async ({ stationCodes }) => {
     const predictionText = await getStationInfo({ stationCodes })
+    logger.debug("STATION INFO RESPONSE:", predictionText)
     return {
       content: [
         {

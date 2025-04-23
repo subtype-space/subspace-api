@@ -123,7 +123,7 @@ mcpServer.tool(
   Some stations have two platforms, like Metro Center, which requires passing in both station codes. For trains with no passengers, the DestinationName will be 'No Passenger'\
   Before close, DestinationName will be 'LastTrain' if they are the last train in that line. You should format your response in a table with markdown",
   {
-    stationCodes: z.array(z.string().min(2).max(3)).describe('An array of station codes'),
+    stationCodes: z.array(z.string().min(2).max(3)).min(1).max(10).describe('An array of station codes'), // pass in at least 1 station code
   },
   async ({ stationCodes }) => {
     const predictionText = await getStationInfo({ stationCodes })

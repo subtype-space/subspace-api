@@ -62,7 +62,6 @@ export async function getStationInfo({
 
 export async function getIncidents() {
   logger.debug("Attempting API call to WMATA")
-  logger.debug(`${PRIMARY_API_KEY}`)
   const response = await fetch(
     "https://api.wmata.com/Incidents.svc/json/Incidents",
     {
@@ -99,8 +98,9 @@ function formatIncidentsData(incidentData: MetroIncident[]): string {
 }
 
 function formatRailPredictionData(predicitonData: RailPrediction[]): string {
+  logger.debug("Attempting API call to WMATA for rail predictions")
   if (predicitonData.length === 0) {
-    return "There is no information for the given station codes"
+    return "There is no information for the given station codes, or the metro is closed"
   }
 
   const predictionText = predicitonData

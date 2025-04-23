@@ -126,7 +126,9 @@ mcpServer.tool(
 
 mcpServer.tool(
   "get-wmata-station-info",
-  "Returns next train arrival for one or more stations. Will return an empty set of results when no predictions are available if a station is closed. Some stations have two platforms, like Metro Center, which requires passing in both station codes. For trains with no passengers, the DestinationName will be 'No Passenger' ",
+  "Returns next train arrival for one or more stations. Will return an empty set of results when no predictions are available if a station is closed.\
+  Some stations have two platforms, like Metro Center, which requires passing in both station codes. For trains with no passengers, the DestinationName will be 'No Passenger'\
+  Before close, DestinationName will be 'LastTrain' if they are the last train in that line",
   {
     stationCodes: z
       .array(z.string().min(2).max(3))

@@ -12,6 +12,7 @@ import { z } from "zod"
 import { getStockDetails } from "./v1/mcp_servers/stocks.js"
 
 import { getIncidents } from "./v1/mcp_servers/metro.js"
+import { getStationInfo } from "./v1/mcp_servers/metro.js"
 logger.info("Initializing MCP server...")
 const mcpServer = new McpServer({
   name: "subspace-mcp-server",
@@ -117,6 +118,27 @@ mcpServer.tool(
         {
           type: "text",
           text: alertsText,
+        },
+      ],
+    }
+  }
+)
+
+mcpServer.tool(
+  "get-wmata-station-info",
+  "Returns next train arrival for one or more stations. Will return an empty set of results when no predictions are available if a station is closed. Some stations have two platforms, like Metro Center, which requires passing in both station codes. For trains with no passengers, the DestinationName will be 'No Passenger' ",
+  {
+    stationCodes: z
+      .array(z.string().min(2).max(3))
+      .describe("An array of station codes"),
+  },
+  async ({ stationCodes }) => {
+    const predictionText = await getStationInfo({ stationCodes })
+    return {
+      content: [
+        {
+          type: "text",
+          text: predictionText,
         },
       ],
     }

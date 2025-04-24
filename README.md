@@ -3,7 +3,7 @@ NOTE! This repository, if viewed on GitHub, is a downstream mirror. Our active A
 
 subspace-api is an express-based RESTful API and Model Context Protocol (MCP) server.
 
-If you are utilizing this API provided and hosted by us, please be sure to abide by the [TOS](https://wiki.subtype.space/s/tos). Otherwise, you are free to clone provided you abide by the GNU GPLv3 license.
+If you are utilizing this API provided and hosted by us, please be sure to abide by the [TOS](https://wiki.subtype.space/s/tos). Otherwise, you are free to clone and self host provided you abide by the GNU GPLv3 license, and the TOS will not pertain to you!
 
 # Getting Started
 ## With Docker (preferrably compose)

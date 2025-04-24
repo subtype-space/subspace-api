@@ -30,7 +30,7 @@ jobs:
           context: .
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/subspace-api:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/morgana:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}
 
   build-for-rc:
     if: startsWith(github.ref, 'refs/heads/rc-')

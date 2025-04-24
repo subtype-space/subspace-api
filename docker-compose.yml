@@ -1,0 +1,18 @@
+services:
+  subspace-api:
+    build: ./
+    image: subspace-api:latest
+    container_name: subspace-api
+    restart: always
+    ports:
+      - 9595:9595
+    env_file: .env
+    networks:
+      - proxy
+      - api
+
+networks:
+  proxy:
+    external: true
+  api:
+    external: true

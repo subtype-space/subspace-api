@@ -1,0 +1,47 @@
+{
+  "name": "subspace-api",
+  "version": "1.0.0",
+  "description": "API service for subtype.space",
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@ansible.subtype.internal:2424/subtype/subspace-api.git"
+  },
+  "keywords": [
+    "API"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsc && chmod 755 build/server.js",
+    "start": "node build/server.js"
+  },
+  "files": [
+    "build"
+  ],
+  "author": "subtype",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.9.0",
+    "prettier":"3.5.3",
+    "yahoo-finance2": "^2.13.3",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.14.1",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "prettier":"3.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "zod": "3.24.3"
+  },
+  "prettier": {
+    "semi": false,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "useTabs": false,
+    "tabWidth": 2,
+    "endOfLine": "lf",
+    "printWidth": 128
+  }
+}

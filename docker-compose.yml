@@ -1,0 +1,26 @@
+services:
+  subspace-api:
+    build: ./
+    image: subspace-api:latest
+    container_name: subspace-api
+    restart: always
+    ports:
+      - 9595:9595
+    env_file: .env
+    labels:
+      - 'traefik.enable=false'
+      - 'traefik.http.routers.blog.rule=Host(`api.subtype.space`)'
+      - 'traefik.http.routers.blog.entrypoints=websecure'
+      - 'traefik.http.routers.blog.tls=true'
+      - 'traefik.http.routers.blog.tls.certresolver=cloudflare'
+      - 'traefik.docker.network=proxy'
+      - 'traefik.http.routers.blog.middlewares=secureHeaders@file, generic-csp@file'
+    networks:
+      - proxy
+      - api
+
+networks:
+  proxy:
+    external: true
+  api:
+    external: true

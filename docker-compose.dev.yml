@@ -1,8 +1,8 @@
 services:
   subspace-api:
     build: ./
-    image: subspace-api:latest
-    container_name: subspace-api
+    image: subspace-api:dev
+    container_name: subspace-api-dev
     restart: always
     ports:
       - 9595:9595

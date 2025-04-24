@@ -1,0 +1,38 @@
+stages:
+  - build
+
+variables:
+  IMAGE_NAME: ghcr.io/subtype-space/subspace-api
+
+build-and-push:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "${GHCR_TOKEN}" | docker login ghcr.io -u subtype-space --password-stdin
+
+    # Build the main tagged image
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_REF_SLUG .
+
+    # Add "latest" tag if pushing to a v* branch
+    - |
+      if [[ "$CI_PIPELINE_SOURCE" == "push" && "$CI_COMMIT_BRANCH" =~ ^v.*$ ]]; then
+        docker tag $IMAGE_NAME:$CI_COMMIT_REF_SLUG $IMAGE_NAME:latest
+      fi
+
+    # Push images if on v* or rc-* branch
+    - |
+      if [[ "$CI_PIPELINE_SOURCE" == "push" && "$CI_COMMIT_BRANCH" =~ ^(v.*|rc-.*)$ ]]; then
+        docker push $IMAGE_NAME:$CI_COMMIT_REF_SLUG
+
+        if [[ "$CI_COMMIT_BRANCH" =~ ^v.*$ ]]; then
+          docker push $IMAGE_NAME:latest
+        fi
+      else
+        echo "Skipping push for non-v*/rc-* branch or merge request"
+      fi
+  only:
+    refs:
+      - branches
+      - merge_requests

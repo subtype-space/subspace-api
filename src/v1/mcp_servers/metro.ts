@@ -28,6 +28,37 @@ type RailPrediction = {
   Min: string
 }
 
+type BusPredictionResponse = {
+  Predictions: BusPrediction[]
+}
+
+type BusPrediction = {
+  DirectionText: string
+  VehicleID: string
+  Minutes: number
+  RouteID: string
+}
+
+export async function getBusInfo({ stopID }: { stopID: string }) {
+  logger.debug('Getting live prediction for bus stop ID:', stopID)
+
+  const response = await fetch(`https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=${stopID}`, {
+    method: 'GET',
+    headers: {
+      api_key: PRIMARY_API_KEY!,
+    },
+  })
+
+  if (!response.ok) {
+    return `WMATA API Error: returned ${response.status} with ${response.statusText}`
+  }
+
+  const predictionData: BusPredictionResponse = await response.json()
+  const busPredictions: BusPrediction[] = predictionData.Predictions
+
+  return formatBusPredictionData(busPredictions)
+}
+
 export async function getStationInfo({ stationCodes }: { stationCodes: string[] }) {
   if (stationCodes.length === 0) {
     logger.debug('No station codes were given')
@@ -70,6 +101,18 @@ export async function getIncidents() {
   const incidents: MetroIncident[] = incidentData.Incidents
 
   return formatIncidentsData(incidents)
+}
+
+function formatBusPredictionData(busPredictionData: BusPrediction[]): string {
+  if (busPredictionData.length === 0) {
+    return 'No information for the bus stop is available at this time.'
+  }
+
+  const predictionText = busPredictionData
+    .map((bus) => `Route: ${bus.RouteID} | Bus: ${bus.VehicleID}\nDirection: ${bus.DirectionText}\nNext bus in: ${bus.Minutes}`)
+    .join('\n\n')
+
+  return predictionText
 }
 
 function formatIncidentsData(incidentData: MetroIncident[]): string {

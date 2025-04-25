@@ -10,7 +10,7 @@ import helmet from 'helmet'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 import { registerTools } from './v1/mcp/registerTools.js'
-import { checkAuth } from './utils/auth.js'
+import { checkAuth, validateJWT } from './utils/auth.js'
 logger.info('Initializing MCP server...')
 const mcpServer = new McpServer({
   name: 'subspace-mcp-server',
@@ -42,6 +42,12 @@ server.get('/sse', async (req: Request, res: Response) => {
     return
   }
 
+  if (!validateJWT(req)) {
+    logger.warn('Incoming request failed JWT validation')
+    res.status(401).send({ message: 'Unauthorized' })
+    return
+  }
+
   const transport = new SSEServerTransport('/messages', res)
   transports[transport.sessionId] = transport
   console.debug('New session created:', transport.sessionId)
@@ -55,12 +61,23 @@ server.get('/sse', async (req: Request, res: Response) => {
 // MCP Handler
 server.post('/messages', async (req: Request, res: Response) => {
   const sessionId = req.query.sessionId as string
+  const authHeader = req.headers.authorization
 
-  if (!checkAuth(req, res)) {
-    logger.warn('Incoming request has invalid or missing authorization', req.rawHeaders)
+  if (!authHeader || !authHeader?.startsWith('Bearer')) {
+    logger.warn('Incoming request is missing auth header or is malformed')
     res.status(401).send({ message: 'Unauthorized' })
-    return
   }
+
+  if (!validateJWT(req)) {
+    logger.warn('Incoming request failed JWT validation')
+    res.status(401).send({ message: 'Unauthorized' })
+  }
+
+  // if (!checkAuth(req, res)) {
+  //   logger.warn('Incoming request has invalid or missing authorization', req.rawHeaders)
+  //   res.status(401).send({ message: 'Unauthorized' })
+  //   return
+  // }
 
   if (typeof sessionId != 'string') {
     console.error('Bad sessionId', sessionId)

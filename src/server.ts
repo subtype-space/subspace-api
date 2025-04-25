@@ -3,11 +3,14 @@ import { logger } from './utils/logger.js'
 import express, { Request, Response } from 'express'
 import trmnlRouter from './v1/routers/trmnlRouter.js'
 import statusRouter from './v1/routers/statusRouter.js'
+import rateLimit from 'express-rate-limit'
+import helmet from 'helmet'
 
 // MCP import shenanigans
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 import { registerTools } from './v1/mcp/registerTools.js'
+import { checkAuth } from './utils/auth.js'
 logger.info('Initializing MCP server...')
 const mcpServer = new McpServer({
   name: 'subspace-mcp-server',
@@ -17,6 +20,7 @@ const mcpServer = new McpServer({
     tools: {},
   },
 })
+
 
 logger.debug(mcpServer)
 const server = express()
@@ -30,8 +34,14 @@ logger.info('Registering tools with MCP server...')
 registerTools(mcpServer)
 
 
-// Discovery endpoint - req is never used
-server.get('/sse', async (_: Request, res: Response) => {
+// Discovery endpoint
+server.get('/sse', async (req: Request, res: Response) => {
+  if (!checkAuth(req, res)) {
+    logger.warn('Incoming request has invalid or missing authorization', req.rawHeaders)
+    res.status(401).send({ message: 'Unauthorized' })
+    return
+  }
+
   const transport = new SSEServerTransport('/messages', res)
   transports[transport.sessionId] = transport
   console.debug('New session created:', transport.sessionId)
@@ -45,6 +55,12 @@ server.get('/sse', async (_: Request, res: Response) => {
 // MCP Handler
 server.post('/messages', async (req: Request, res: Response) => {
   const sessionId = req.query.sessionId as string
+
+  if (!checkAuth(req, res)) {
+    logger.warn('Incoming request has invalid or missing authorization', req.rawHeaders)
+    res.status(401).send({ message: 'Unauthorized' })
+    return
+  }
 
   if (typeof sessionId != 'string') {
     console.error('Bad sessionId', sessionId)
@@ -65,6 +81,13 @@ logger.info('Initializing routes...')
 server.use('/', express.json(), statusRouter)
 server.use('/v1/trmnl', express.json(), trmnlRouter)
 server.use('/health', express.json(), statusRouter)
+
+logger.info('Setting up middleware...')
+// Set up rate limiting
+const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 })
+
+server.use(limiter)
+server.use(helmet())
 
 server.listen(PORT, () => {
   logger.info(`Using log level: ${process.env.LOG_LEVEL || 'info'}`)

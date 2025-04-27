@@ -9,7 +9,7 @@ export function validateJWT(req: Request): boolean {
     return false
   }
   const authHeader = req.headers.authorization
-  console.debug('Incoming headers:', req.headers)
+  logger.debug('Incoming headers:', req.headers)
   if (!authHeader?.startsWith('Bearer ')) {
     logger.error('No auth header!')
     return false

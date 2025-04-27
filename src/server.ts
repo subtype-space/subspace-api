@@ -42,9 +42,9 @@ server.get('/sse', async (req: Request, res: Response) => {
 
   const transport = new SSEServerTransport('/messages', res)
   transports[transport.sessionId] = transport
-  console.debug('New session created:', transport.sessionId)
+  logger.info('New MCP session created:', transport.sessionId)
   res.on('close', () => {
-    logger.debug('Closing connection')
+    logger.info('Closing session')
     delete transports[transport.sessionId]
   })
   await mcpServer.connect(transport)
@@ -60,13 +60,13 @@ server.post('/messages', async (req: Request, res: Response) => {
   }
 
   if (typeof sessionId != 'string') {
-    console.error('Bad sessionId', sessionId)
+    logger.error('Bad sessionId', sessionId)
     res.status(400).send({ messages: 'Bad sessionId' })
   }
 
   const transport = transports[sessionId]
   if (transport) {
-    console.debug(`${transport.sessionId} has an active session`)
+    logger.info(`${transport.sessionId} has an active session`)
     await transport.handlePostMessage(req, res, req.body) // don't remove req.body otherwise MCP inspector will panik
   } else {
     res.status(400).send(`No session was found for ${sessionId}`)

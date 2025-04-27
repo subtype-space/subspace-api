@@ -37,7 +37,7 @@ registerTools(mcpServer)
 // Discovery endpoint
 server.get('/sse', async (req: Request, res: Response) => {
   if (!validateJWT(req)) {
-    logger.warn('Incoming request has invalid or missing authorization', req.rawHeaders)
+    logger.warn('Incoming request has invalid or missing authorization', req.headers.authorization)
     res.status(401).send({ message: 'Unauthorized' })
     return
   }

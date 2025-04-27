@@ -27,7 +27,7 @@ export function validateJWT(req: Request): boolean {
     return false
   }
   const authHeader = req.headers.authorization
-  if (!authHeader?.startsWith('Bearer')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return false
   }
   // Get token from auth header since it'd look like "Bearer <token>"

@@ -24,13 +24,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build and maybe push (v branch or PR target)
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/subspace-api:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/subspace-api:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/subspace-api:latest
 
   build-for-rc:
     if: startsWith(github.ref, 'refs/heads/rc-')

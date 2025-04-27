@@ -1,10 +1,11 @@
 const LOG_LEVELS = ['error', 'warn', 'info', 'debug'] as const
 type LogLevel = (typeof LOG_LEVELS)[number]
 
-const CURRENT_LOG_LEVEL: LogLevel = (process.env.LOG_LEVEL as LogLevel) || 'info' //default to info
+const rawLogLevel = (process.env.LOG_LEVEL || 'info').toLowerCase()
+const CURRENT_LOG_LEVEL: LogLevel = LOG_LEVELS.includes(rawLogLevel as LogLevel) ? (rawLogLevel as LogLevel) : 'info'
 
 function shouldLog(level: LogLevel): boolean {
-  return LOG_LEVELS.indexOf(level) >= LOG_LEVELS.indexOf(CURRENT_LOG_LEVEL)
+  return LOG_LEVELS.indexOf(level) <= LOG_LEVELS.indexOf(CURRENT_LOG_LEVEL)
 }
 
 export const logger = {

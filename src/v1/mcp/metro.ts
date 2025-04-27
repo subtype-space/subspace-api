@@ -139,9 +139,21 @@ function formatRailPredictionData(predicitonData: RailPrediction[]): string {
   const predictionText = predicitonData
     .map(
       (prediction) =>
-        `${prediction.Line} line\nDestination: ${prediction.DestinationName}\n${prediction.Car} cars long\nNext train arriving in: ${prediction.Min}`
+        `${getColor(prediction.Line)} ${prediction.Line} line\nDestination: ${prediction.DestinationName}\n${prediction.Car} cars long\nNext train arriving in: ${prediction.Min}`
     )
     .join('\n\n')
 
   return predictionText
+}
+
+function getColor(line: string) {
+  const lineMap = new Map([
+    ['RD', '🔴'],
+    ['OR', '🟠'],
+    ['YL', '🟡'],
+    ['GR', '🟢'],
+    ['BL', '🔵'],
+    ['SV', '⚪']
+  ]);
+  return lineMap.get(line);
 }

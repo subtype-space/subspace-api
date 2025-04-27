@@ -1,7 +1,7 @@
 services:
   subspace-api:
     build: ./
-    image: subspace-api:latest
+    image: ghcr.io/subtype-space/subspace-api:latest
     container_name: subspace-api
     restart: always
     ports:

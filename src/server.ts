@@ -10,7 +10,7 @@ import helmet from 'helmet'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 import { registerTools } from './v1/mcp/registerTools.js'
-import { checkAuth, validateJWT } from './utils/auth.js'
+import { validateJWT } from './utils/auth.js'
 logger.info('Initializing MCP server...')
 const mcpServer = new McpServer({
   name: 'subspace-mcp-server',
@@ -29,10 +29,8 @@ const ACTIVE_VERSION = process.env.API_VERSION || 'v1'
 // Register and enable model context protocol tools
 const transports: { [sessionId: string]: SSEServerTransport } = {}
 
-
 logger.info('Registering tools with MCP server...')
 registerTools(mcpServer)
-
 
 // Discovery endpoint
 server.get('/sse', async (req: Request, res: Response) => {
@@ -55,19 +53,11 @@ server.get('/sse', async (req: Request, res: Response) => {
 // MCP Handler
 server.post('/messages', async (req: Request, res: Response) => {
   const sessionId = req.query.sessionId as string
-  const authHeader = req.headers.authorization
-
   if (!validateJWT(req)) {
     logger.warn('Incoming request failed JWT validation')
     res.status(401).send({ message: 'Unauthorized' })
     return
   }
-
-  // if (!checkAuth(req, res)) {
-  //   logger.warn('Incoming request has invalid or missing authorization', req.rawHeaders)
-  //   res.status(401).send({ message: 'Unauthorized' })
-  //   return
-  // }
 
   if (typeof sessionId != 'string') {
     console.error('Bad sessionId', sessionId)

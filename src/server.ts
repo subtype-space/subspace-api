@@ -57,12 +57,6 @@ server.post('/messages', async (req: Request, res: Response) => {
   const sessionId = req.query.sessionId as string
   const authHeader = req.headers.authorization
 
-  if (!authHeader || !authHeader?.startsWith('Bearer ')) {
-    logger.warn('Incoming request is missing auth header or is malformed')
-    res.status(401).send({ message: 'Unauthorized' })
-    return
-  }
-
   if (!validateJWT(req)) {
     logger.warn('Incoming request failed JWT validation')
     res.status(401).send({ message: 'Unauthorized' })

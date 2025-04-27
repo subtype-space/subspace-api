@@ -32,6 +32,7 @@ export function validateJWT(req: Request): boolean {
   }
   // Get token from auth header since it'd look like "Bearer <token>"
   const token = authHeader.split(' ')[1]
+  logger.debug('Inspecting token', token)
 
   try {
     jwt.verify(token, secret as Secret)

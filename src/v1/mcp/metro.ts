@@ -148,12 +148,12 @@ function formatRailPredictionData(predicitonData: RailPrediction[]): string {
 
 function getColor(line: string) {
   const lineMap = new Map([
-    ['RD;', '🔴'],
-    ['OR;', '🟠'],
-    ['YL;', '🟡'],
-    ['GR;', '🟢'],
-    ['BL;', '🔵'],
-    ['SV;', '⚪']
+    ['RD', '🔴'],
+    ['OR', '🟠'],
+    ['YL', '🟡'],
+    ['GR', '🟢'],
+    ['BL', '🔵'],
+    ['SV', '⚪']
   ]);
   return lineMap.get(line);
 }

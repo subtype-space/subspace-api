@@ -14,9 +14,18 @@ function formatMessage(level: LogLevel, args: unknown[]): unknown[] {
     hour12: false,
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
+    second: '2-digit',
   })
-  return [`[${level.toUpperCase()}] [${ date } ${ time }]`, ...args]
+  const colorCodes: Record<LogLevel, string> = {
+    error: '\x1b[31m', // Red
+    warn: '\x1b[33m', // Yellow
+    info: '\x1b[36m', // Cyan
+    debug: '\x1b[90m', // Gray
+  }
+
+  const resetCode = '\x1b[0m'
+  
+  return [`${colorCodes[level]}[${level.toUpperCase().padEnd(5)}]${resetCode} [${date} ${time}]`, ...args]
 }
 
 export const logger = Object.fromEntries(

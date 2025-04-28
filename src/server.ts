@@ -11,6 +11,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 import { registerTools } from './v1/mcp/registerTools.js'
 import { validateJWT } from './utils/auth.js'
+
+
 logger.info('Initializing MCP server...')
 const mcpServer = new McpServer({
   name: 'subspace-mcp-server',
@@ -20,8 +22,6 @@ const mcpServer = new McpServer({
     tools: {},
   },
 })
-
-
 logger.debug(mcpServer)
 const server = express()
 const PORT = process.env.PORT || 9595

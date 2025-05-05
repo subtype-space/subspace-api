@@ -30,3 +30,4 @@ npm run build && npm run start
 | ACTIVE_VERSION | Defaults to 'v1', currently not implemented fully. |
 | WMATA_PRIMARY_KEY | The API key to use for obtaining WMATA status. |
 | JWT_SECRET | This is the secret key that is used for encrypting and decrypting JWT tokens. |
+| TZ | (Optional) Lets the container/logger format log messages with the machine's local time zone. |

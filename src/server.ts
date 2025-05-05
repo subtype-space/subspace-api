@@ -34,7 +34,8 @@ registerTools(mcpServer)
 
 // Discovery endpoint
 server.get('/sse', async (req: Request, res: Response) => {
-  if (!validateJWT(req)) {
+  const userJWT = validateJWT(req)
+  if (!userJWT) {
     logger.warn('Incoming request has invalid or missing authorization', req.headers.authorization)
     res.status(401).send({ message: 'Unauthorized' })
     return
@@ -53,7 +54,8 @@ server.get('/sse', async (req: Request, res: Response) => {
 // MCP Handler
 server.post('/messages', async (req: Request, res: Response) => {
   const sessionId = req.query.sessionId as string
-  if (!validateJWT(req)) {
+  const userJWT = validateJWT(req)
+  if (!userJWT) {
     logger.warn('Incoming request failed JWT validation')
     res.status(401).send({ message: 'Unauthorized' })
     return

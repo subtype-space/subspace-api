@@ -10,7 +10,7 @@ import helmet from 'helmet'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 import { registerTools } from './v1/mcp/registerTools.js'
-import { validateJWT, authRequired } from './utils/auth.js'
+import { logIncomingAuth, authRequired, authOptional } from './utils/auth.js'
 
 
 logger.info('Initializing MCP server...')
@@ -33,7 +33,7 @@ logger.info('Registering tools with MCP server...')
 registerTools(mcpServer)
 
 // Discovery endpoint
-server.get('/sse', authRequired, async (req: Request, res: Response) => {
+server.get('/sse', logIncomingAuth, authRequired, async (req: Request, res: Response) => {
 
   const transport = new SSEServerTransport('/messages', res)
   transports[transport.sessionId] = transport
@@ -46,7 +46,7 @@ server.get('/sse', authRequired, async (req: Request, res: Response) => {
 })
 
 // MCP Handler
-server.post('/messages', authRequired, async (req: Request, res: Response) => {
+server.post('/messages', logIncomingAuth, authRequired, async (req: Request, res: Response) => {
   const sessionId = req.query.sessionId as string
 
   if (typeof sessionId != 'string') {
@@ -63,18 +63,22 @@ server.post('/messages', authRequired, async (req: Request, res: Response) => {
   }
 })
 
+logger.info('Setting up middleware...')
+// Set up rate limiting
+const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 })
+
+server.use(helmet())
+server.use(limiter)
+
 logger.info('Initializing routes...')
 // Declare regular REST API routing
 server.use('/', express.json(), statusRouter)
 server.use('/v1/trmnl', express.json(), trmnlRouter)
 server.use('/health', express.json(), statusRouter)
 
-logger.info('Setting up middleware...')
-// Set up rate limiting
-const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 })
+// reverse proxy
+server.set('trust proxy', 1)
 
-server.use(limiter)
-server.use(helmet())
 
 server.listen(PORT, () => {
   logger.info(`Using log level: ${process.env.LOG_LEVEL || 'info'}`)

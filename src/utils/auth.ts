@@ -1,4 +1,4 @@
-import { Request } from 'express'
+import { Request, Response, NextFunction } from 'express'
 import { logger } from './logger.js'
 import jwt, { Secret } from 'jsonwebtoken'
 
@@ -25,4 +25,14 @@ export function validateJWT(req: Request) {
     logger.warn('JWT validation failed', error)
     return null
   }
+}
+
+export async function authRequired(req: Request, res: Response, next: NextFunction) {
+  const user = validateJWT(req)
+  if (!user) {
+    logger.warn('Incoming request failed JWT validation')
+    res.status(401).send({ message: 'Unauthorized' })
+  }
+  // handle user logic way way way later
+  next()
 }

@@ -10,7 +10,7 @@ import helmet from 'helmet'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 import { registerTools } from './v1/mcp/registerTools.js'
-import { validateJWT } from './utils/auth.js'
+import { validateJWT, authRequired } from './utils/auth.js'
 
 
 logger.info('Initializing MCP server...')
@@ -33,31 +33,21 @@ logger.info('Registering tools with MCP server...')
 registerTools(mcpServer)
 
 // Discovery endpoint
-server.get('/sse', async (req: Request, res: Response) => {
-  if (!validateJWT(req)) {
-    logger.warn('Incoming request has invalid or missing authorization', req.headers.authorization)
-    res.status(401).send({ message: 'Unauthorized' })
-    return
-  }
+server.get('/sse', authRequired, async (req: Request, res: Response) => {
 
   const transport = new SSEServerTransport('/messages', res)
   transports[transport.sessionId] = transport
   logger.info('New MCP session created:', transport.sessionId)
   res.on('close', () => {
-    logger.info('Closing session')
+    logger.info('Closing session', transports[transport.sessionId])
     delete transports[transport.sessionId]
   })
   await mcpServer.connect(transport)
 })
 
 // MCP Handler
-server.post('/messages', async (req: Request, res: Response) => {
+server.post('/messages', authRequired, async (req: Request, res: Response) => {
   const sessionId = req.query.sessionId as string
-  if (!validateJWT(req)) {
-    logger.warn('Incoming request failed JWT validation')
-    res.status(401).send({ message: 'Unauthorized' })
-    return
-  }
 
   if (typeof sessionId != 'string') {
     logger.error('Bad sessionId', sessionId)

@@ -1,6 +1,6 @@
 import './utils/env.js' // I hate how I have to do this but whatever. Stupid shim.
 import { logger } from './utils/logger.js'
-import express, { Request, Response } from 'express'
+import express, { NextFunction, Request, Response } from 'express'
 import trmnlRouter from './v1/routers/trmnlRouter.js'
 import statusRouter from './v1/routers/statusRouter.js'
 import rateLimit from 'express-rate-limit'
@@ -11,7 +11,6 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 import { registerTools } from './v1/mcp/registerTools.js'
 import { logIncomingAuth, authRequired, authOptional } from './utils/auth.js'
-
 
 logger.info('Initializing MCP server...')
 const mcpServer = new McpServer({
@@ -34,7 +33,6 @@ registerTools(mcpServer)
 
 // Discovery endpoint
 server.get('/sse', logIncomingAuth, authRequired, async (req: Request, res: Response) => {
-
   const transport = new SSEServerTransport('/messages', res)
   transports[transport.sessionId] = transport
   logger.info('New MCP session created:', transport.sessionId)
@@ -51,7 +49,7 @@ server.post('/messages', logIncomingAuth, authRequired, async (req: Request, res
 
   if (typeof sessionId != 'string') {
     logger.error('Bad sessionId', sessionId)
-    res.status(400).send({ messages: 'Bad sessionId' })
+    res.status(400).send({ message: 'Bad sessionId' })
   }
 
   const transport = transports[sessionId]
@@ -79,6 +77,17 @@ server.use('/health', express.json(), statusRouter)
 // reverse proxy
 server.set('trust proxy', 1)
 
+server.use(function (err: any, req: Request, res: Response, next: NextFunction) {
+  if (err.name === 'UnauthorizedError') {
+    logger.warn('JWT failed authentication')
+    res.status(401).send({ message: 'Unauthorized' })
+  } else if (err.code === 'credentials_required') {
+    logger.warn('No token provided')
+    res.status(401).json({ message: 'No token provided' })
+  } else {
+    next(err)
+  }
+})
 
 server.listen(PORT, () => {
   logger.info(`Using log level: ${process.env.LOG_LEVEL || 'info'}`)

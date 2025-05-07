@@ -70,9 +70,9 @@ server.use(limiter)
 
 logger.info('Initializing routes...')
 // Declare regular REST API routing
-server.use('/', express.json(), statusRouter)
-server.use('/v1/trmnl', express.json(), trmnlRouter)
-server.use('/health', express.json(), statusRouter)
+server.use('/', authOptional, express.json(), statusRouter)
+//server.use('/v1/trmnl', express.json(), trmnlRouter) disable this route because it's just not active right now
+server.use('/health', authOptional, express.json(), statusRouter)
 
 // reverse proxy
 server.set('trust proxy', 1)

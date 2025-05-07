@@ -15,8 +15,6 @@ docker compose -f docker-compose.dev.yml down || true
 case "$MODE" in
   prod)
     echo "📦 Pulling latest image from GitHub Container Registry..."
-    git checkout $LATEST_RELEASE
-    git pull origin $LATEST_RELEASE
     docker compose pull && docker compose up -d
     ;;
 
@@ -32,7 +30,7 @@ case "$MODE" in
     ;;
 
   *)
-    echo "❌ Unknown mode: $MODE"
+    echo "Unknown mode: $MODE"
     echo "Usage: $0 [dev|rc|prod] [branch (optional)]"
     echo "Note: dev and rc flags currently do the same thing!"
     exit 1

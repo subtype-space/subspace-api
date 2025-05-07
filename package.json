@@ -12,7 +12,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc && chmod 755 build/server.js",
-    "start": "node build/server.js"
+    "start": "node build/server.js",
+    "prod": "./run.sh prod"
   },
   "files": [
     "build"

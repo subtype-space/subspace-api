@@ -37,7 +37,7 @@ server.get('/sse', logIncomingAuth, authRequired, async (req: Request, res: Resp
   transports[transport.sessionId] = transport
   logger.info('New MCP session created:', transport.sessionId)
   res.on('close', () => {
-    logger.info('Closing session', transports[transport.sessionId])
+    logger.info('Closing session', transport.sessionId)
     delete transports[transport.sessionId]
   })
   await mcpServer.connect(transport)

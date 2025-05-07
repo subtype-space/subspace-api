@@ -37,4 +37,4 @@ case "$MODE" in
     ;;
 esac
 
-echo "✅ Done! Mode: $MODE | Branch: $BRANCH"
+echo "✅ Done! Mode: $MODE"

@@ -6,7 +6,7 @@ import { Response } from 'express'
 export const rateLimiter: RateLimitRequestHandler = rateLimit({
     windowMs: 60 * 1000,
     limit: (req: Request): number => {
-        logger.debug(`Rate limit check ${ req.auth ? 'authenticated' : 'anon' } - ${ req.ip }`)
+        logger.debug(`Rate limit check ${ req.auth ? 'authenticated' : 'anon' } - ${ req.headers['cf-connecting-ip'] ?? req.ip }`)
         return req.auth ? 60 : 5 // 60 req/min for auth, 5 for anon
     },
     keyGenerator: (req: Request): string => {

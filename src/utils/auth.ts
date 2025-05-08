@@ -5,11 +5,14 @@ import { logger } from './logger.js'
 const JWT_SECRET = process.env.JWT_SECRET
 
 export function logIncomingAuth(req: Request, res: Response, next: NextFunction) {
-  logger.debug('Incoming headers:', req.headers)
+  logger.info(
+    `[AUTH] ${req.headers['cf-connecting-ip'] ?? req.ip} - ${req.headers['cf-ipcountry'] ?? 'unknown country'}`
+  )
 
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) {
     logger.warn('No auth header or bad format')
+    logger.debug('Incoming headers:', req.headers)
   } else {
     const token = authHeader.split(' ')[1]
     logger.debug('Inspecting token:', token)

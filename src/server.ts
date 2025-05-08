@@ -1,16 +1,18 @@
 import './utils/env.js' // I hate how I have to do this but whatever. Stupid shim.
 import { logger } from './utils/logger.js'
-import express, { NextFunction, Request, Response } from 'express'
+import express, { NextFunction, Response } from 'express'
+import { Request } from 'express-jwt'
 import trmnlRouter from './v1/routers/trmnlRouter.js'
 import statusRouter from './v1/routers/statusRouter.js'
-import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 
 // MCP import shenanigans
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 import { registerTools } from './v1/mcp/registerTools.js'
+
 import { logIncomingAuth, authRequired, authOptional } from './utils/auth.js'
+import { rateLimiter } from './utils/rateLimiter.js'
 
 logger.info('Initializing MCP server...')
 const mcpServer = new McpServer({
@@ -31,6 +33,33 @@ const transports: { [sessionId: string]: SSEServerTransport } = {}
 logger.info('Registering tools with MCP server...')
 registerTools(mcpServer)
 
+logger.info('Setting up middleware...')
+server.use(helmet())
+logger.info('Initializing routes...')
+
+// Declare regular REST API routing
+server.use(authOptional, rateLimiter)
+
+//server.use('/v1/trmnl', express.json(), trmnlRouter) disable this route because it's just not active right now
+server.use('/', statusRouter)
+server.use('/health', express.json(), statusRouter)
+
+// reverse proxy
+server.set('trust proxy', 1)
+
+server.use(function (err: any, req: Request, res: Response, next: NextFunction) {
+  if (err.name === 'UnauthorizedError') {
+    logger.warn('JWT failed authentication')
+    res.status(401).send({ message: 'Unauthorized' })
+  } else if (err.code === 'credentials_required') {
+    logger.warn('No token provided')
+    res.status(401).json({ message: 'No token provided' })
+  } else {
+    next(err)
+  }
+})
+
+// MCP Setup
 // Discovery endpoint
 server.get('/sse', logIncomingAuth, authRequired, async (req: Request, res: Response) => {
   const transport = new SSEServerTransport('/messages', res)
@@ -58,34 +87,6 @@ server.post('/messages', logIncomingAuth, authRequired, async (req: Request, res
     await transport.handlePostMessage(req, res, req.body) // don't remove req.body otherwise MCP inspector will panik
   } else {
     res.status(400).send(`No session was found for ${sessionId}`)
-  }
-})
-
-logger.info('Setting up middleware...')
-// Set up rate limiting
-const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 })
-
-server.use(helmet())
-server.use(limiter)
-
-logger.info('Initializing routes...')
-// Declare regular REST API routing
-server.use('/', authOptional, express.json(), statusRouter)
-//server.use('/v1/trmnl', express.json(), trmnlRouter) disable this route because it's just not active right now
-server.use('/health', authOptional, express.json(), statusRouter)
-
-// reverse proxy
-server.set('trust proxy', 1)
-
-server.use(function (err: any, req: Request, res: Response, next: NextFunction) {
-  if (err.name === 'UnauthorizedError') {
-    logger.warn('JWT failed authentication')
-    res.status(401).send({ message: 'Unauthorized' })
-  } else if (err.code === 'credentials_required') {
-    logger.warn('No token provided')
-    res.status(401).json({ message: 'No token provided' })
-  } else {
-    next(err)
   }
 })
 

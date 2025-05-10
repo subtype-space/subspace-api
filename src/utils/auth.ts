@@ -9,7 +9,9 @@ const JWT_SECRET = process.env.JWT_SECRET
 
 // all of this may change due to keycloak oauth support
 export function logIncomingAuth(req: Request, res: Response, next: NextFunction) {
-  logger.info(`[AUTH] Connection from ${req.headers['cf-connecting-ip'] ?? req.ip} - ${req.headers['cf-ipcountry'] ?? 'unknown country'}`)
+  logger.info(
+    `[AUTH] Connection from ${req.headers['cf-connecting-ip'] ?? req.ip} - ${req.headers['cf-ipcountry'] ?? 'unknown country'}`
+  )
 
   // For "manual" JWT
   const authHeader = req.headers.authorization
@@ -34,6 +36,7 @@ export function logIncomingAuth(req: Request, res: Response, next: NextFunction)
   next()
 }
 
+// Deprecated exports, or present to support basic JWT authentication w/ shared secret
 export const authRequired = expressjwt({
   secret: JWT_SECRET!,
   issuer: 'https://auth.subtype.space',

@@ -9,8 +9,11 @@ function oauthUsed(req: Request): boolean {
 }
 
 function getUserId(req: Request): string {
-  return req.auth?.sub ? `session-${req.auth.sub}` : req.kauth?.grant.access_token.content.sub!
+  return req.auth?.sub
+    ? `session-${req.auth.sub}`
+    : req.kauth?.grant?.access_token?.content?.sub ?? `anon-session-${req.ip}`
 }
+
 
 export const rateLimiter: RateLimitRequestHandler = rateLimit({
   windowMs: 60 * 1000,

@@ -8,26 +8,14 @@ import helmet from 'helmet'
 import session from 'express-session'
 
 import KeycloakConnect from 'keycloak-connect'
-const memoryStore = new session.MemoryStore()
-
-const keycloak = new KeycloakConnect(
-  { store: memoryStore },
-  {
-    realm: 'subspace',
-    'auth-server-url': 'https://auth.subtype.space',
-    'resource': 'subspace-api',
-    'ssl-required': 'true',
-    'confidential-port': 443,
-    'bearer-only': true
-  }
-)
+import { keycloakConfig } from './configs/keycloakConfig.js'
 
 // MCP import shenanigans
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 import { registerTools } from './v1/mcp/registerTools.js'
 
-import { logIncomingAuth, authRequired, authOptional } from './utils/auth.js'
+import { logIncomingAuth } from './utils/auth.js'
 import { rateLimiter } from './utils/rateLimiter.js'
 
 logger.info('Initializing MCP server...')
@@ -45,15 +33,13 @@ const PORT = process.env.PORT || 9595
 const ACTIVE_VERSION = process.env.API_VERSION || 'v1'
 // Register and enable model context protocol tools
 const transports: { [sessionId: string]: SSEServerTransport } = {}
+const memoryStore = new session.MemoryStore()
+const keycloak = new KeycloakConnect({ store: memoryStore }, keycloakConfig)
 
 logger.info('Registering tools with MCP server...')
 registerTools(mcpServer)
 
 logger.info('Setting up middleware...')
-server.use(helmet())
-logger.info('Initializing routes...')
-
-// keycloak testing
 // SESSION_SECRET should just be a super long random base64 encoded string
 server.use(
   session({
@@ -63,12 +49,12 @@ server.use(
     store: memoryStore,
   })
 )
-
 server.use(keycloak.middleware())
-
+server.use(helmet())
+server.use(rateLimiter)
 
 // Declare regular REST API routing
-server.use(rateLimiter)
+logger.info('Initializing routes...')
 
 //server.use('/v1/trmnl', express.json(), trmnlRouter) disable this route because it's just not active right now
 server.use('/', statusRouter)

@@ -24,7 +24,9 @@
     "@modelcontextprotocol/sdk": "^1.9.0",
     "express-jwt": "^8.5.1",
     "express-rate-limit": "^7.5.0",
+    "express-session": "^1.18.1",
     "jose": "^6.0.10",
+    "keycloak-connect": "^26.1.1",
     "prettier": "3.5.3",
     "yahoo-finance2": "^2.13.3",
     "zod": "^3.24.2"
@@ -32,6 +34,7 @@
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/express-jwt": "^6.0.4",
+    "@types/express-session": "^1.18.1",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.14.1",
     "dotenv": "^16.5.0",

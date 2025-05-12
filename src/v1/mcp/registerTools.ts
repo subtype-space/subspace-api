@@ -1,9 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { CallToolRequest, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 import { z } from 'zod'
 import { getAlerts, getForecast } from './weather.js'
 import { getStockDetails } from './stocks.js'
 import { getIncidents, getStationInfo, getBusInfo } from './metro.js'
 import { logger } from '../../utils/logger.js'
+
 
 export function registerTools(mcpServer: McpServer) {
   mcpServer.tool(

@@ -5,13 +5,17 @@ import { Request } from 'express-jwt'
 import trmnlRouter from './v1/routers/trmnlRouter.js'
 import statusRouter from './v1/routers/statusRouter.js'
 import helmet from 'helmet'
+import session from 'express-session'
+
+import KeycloakConnect from 'keycloak-connect'
+import { keycloakConfig } from './configs/keycloakConfig.js'
 
 // MCP import shenanigans
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 import { registerTools } from './v1/mcp/registerTools.js'
 
-import { logIncomingAuth, authRequired, authOptional } from './utils/auth.js'
+import { logIncomingAuth } from './utils/auth.js'
 import { rateLimiter } from './utils/rateLimiter.js'
 
 logger.info('Initializing MCP server...')
@@ -29,16 +33,28 @@ const PORT = process.env.PORT || 9595
 const ACTIVE_VERSION = process.env.API_VERSION || 'v1'
 // Register and enable model context protocol tools
 const transports: { [sessionId: string]: SSEServerTransport } = {}
+const memoryStore = new session.MemoryStore()
+const keycloak = new KeycloakConnect({ store: memoryStore }, keycloakConfig)
 
 logger.info('Registering tools with MCP server...')
 registerTools(mcpServer)
 
 logger.info('Setting up middleware...')
+// SESSION_SECRET should just be a super long random base64 encoded string
+server.use(
+  session({
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: true,
+    store: memoryStore,
+  })
+)
+server.use(keycloak.middleware())
 server.use(helmet())
-logger.info('Initializing routes...')
+server.use(rateLimiter)
 
 // Declare regular REST API routing
-server.use(authOptional, rateLimiter)
+logger.info('Initializing routes...')
 
 //server.use('/v1/trmnl', express.json(), trmnlRouter) disable this route because it's just not active right now
 server.use('/', statusRouter)
@@ -48,6 +64,8 @@ server.use('/health', express.json(), statusRouter)
 server.set('trust proxy', 1)
 
 server.use(function (err: any, req: Request, res: Response, next: NextFunction) {
+  logger.debug(err)
+
   if (err.name === 'UnauthorizedError') {
     logger.warn('JWT failed authentication')
     res.status(401).send({ message: 'Unauthorized' })
@@ -61,7 +79,7 @@ server.use(function (err: any, req: Request, res: Response, next: NextFunction) 
 
 // MCP Setup
 // Discovery endpoint
-server.get('/sse', logIncomingAuth, authRequired, async (req: Request, res: Response) => {
+server.get('/sse', logIncomingAuth, keycloak.protect(), async (req: Request, res: Response) => {
   const transport = new SSEServerTransport('/messages', res)
   transports[transport.sessionId] = transport
   logger.info('New MCP session created:', transport.sessionId)
@@ -73,7 +91,7 @@ server.get('/sse', logIncomingAuth, authRequired, async (req: Request, res: Resp
 })
 
 // MCP Handler
-server.post('/messages', logIncomingAuth, authRequired, async (req: Request, res: Response) => {
+server.post('/messages', logIncomingAuth, keycloak.protect(), async (req: Request, res: Response) => {
   const sessionId = req.query.sessionId as string
 
   if (typeof sessionId != 'string') {
@@ -88,6 +106,15 @@ server.post('/messages', logIncomingAuth, authRequired, async (req: Request, res
   } else {
     res.status(400).send(`No session was found for ${sessionId}`)
   }
+})
+
+// oauth
+server.get('/.well-known/oauth-protected-resource', async (_: Request, res: Response) => {
+  const baseURL = `https://api.subtype.space`
+  res.json({
+    resource: baseURL,
+    authorization_servers: [`https://auth.subtype.space`],
+  })
 })
 
 server.listen(PORT, () => {

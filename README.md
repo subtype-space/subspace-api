@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/subtype-space-subspace-api-badge.png)](https://mseep.ai/app/subtype-space-subspace-api)
+
 # subspace-api
 NOTE! This repository, if viewed on GitHub, is a downstream mirror. Our active API service may not reflect changes that are shown here in a timely manner.
 

@@ -26,8 +26,9 @@ npm run build && npm run start
 | Env var | Purpose |
 |---------|--------|
 | PORT | Defaults to 9595. The port for the API and MCP server to listen on. |
-| LOG_LEVEL | Defaults to 'info'. Set the logging level |
+| LOG_LEVEL | Defaults to 'info'. Set the logging level. |
 | ACTIVE_VERSION | Defaults to 'v1', currently not implemented fully. |
 | WMATA_PRIMARY_KEY | The API key to use for obtaining WMATA status. |
-| JWT_SECRET | This is the secret key that is used for encrypting and decrypting JWT tokens. |
+| JWT_SECRET | (DEPRECATED) This is the secret key that is used for encrypting and decrypting JWT tokens. |
+| SESSION_SECRET | Base64 encoded random string that you can probably generate with `openssl rand -base64 64`. |
 | TZ | (Optional) Lets the container/logger format log messages with the machine's local time zone. |

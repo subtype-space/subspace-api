@@ -9,6 +9,10 @@ on:
     branches:
       - 'v*'
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-for-v:
     if: startsWith(github.ref, 'refs/heads/v') || (github.event_name == 'pull_request' && startsWith(github.base_ref, 'v'))

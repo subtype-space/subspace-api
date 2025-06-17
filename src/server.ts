@@ -47,6 +47,9 @@ server.use(
     resave: false,
     saveUninitialized: true,
     store: memoryStore,
+    cookie: {
+      secure: true // Setting this to true requires trust proxy set in express
+    }
   })
 )
 server.use(keycloak.middleware())
@@ -61,7 +64,7 @@ logger.info('Initializing routes...')
 server.use('/', statusRouter)
 server.use('/health', express.json(), statusRouter)
 
-// reverse proxy
+// reverse proxy -- removing this will cause issues with secure cookies
 server.set('trust proxy', 1)
 
 server.use(function (err: any, req: Request, res: Response, next: NextFunction) {
@@ -105,7 +108,8 @@ server.post('/messages', logIncomingAuth, keycloak.protect(), async (req: Reques
     logger.info(`${transport.sessionId} has an active session`)
     await transport.handlePostMessage(req, res, req.body) // don't remove req.body otherwise MCP inspector will panik
   } else {
-    res.status(400).send(`No session was found for ${sessionId}`)
+    logger.warn(`${sessionId} was not found`)
+    res.status(400).send('Requested sessionId not found')
   }
 })
 

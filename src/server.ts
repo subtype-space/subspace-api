@@ -114,7 +114,8 @@ server.post('/messages', logIncomingAuth, keycloak.protect(), async (req: Reques
 })
 
 // discord activity auth
-server.post('/discord/token', async (req, res) => {
+// this is subject to change
+server.post('/.proxy/api/token', async (req, res) => {
     // Exchange the code for an access_token
   const response = await fetch(`https://discord.com/api/oauth2/token`, {
     method: "POST",

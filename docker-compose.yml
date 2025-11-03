@@ -1,0 +1,26 @@
+services:
+  subspace-api:
+    build: ./
+    image: ghcr.io/subtype-space/subspace-api:latest
+    container_name: subspace-api
+    restart: always
+    ports:
+      - 9595:9595
+    env_file: .env
+    networks:
+      - proxy
+      - api
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.subspace-api.rule=Host(`api.subtype.space`)'
+      - 'traefik.http.routers.subspace-api.entrypoints=websecure'
+      - 'traefik.http.routers.subspace-api.tls=true'
+      - 'traefik.http.routers.subspace-api.tls.certresolver=cloudflare'
+      - 'traefik.docker.network=proxy'
+      - 'traefik.http.routers.subspace-api.middlewares=secureHeaders@file, generic-csp@file'
+
+networks:
+  proxy:
+    external: true
+  api:
+    external: true

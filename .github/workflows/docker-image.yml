@@ -7,7 +7,8 @@ on:
       - 'rc-*'   # release candidates
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: read
   packages: write
 
 jobs:
@@ -41,22 +42,11 @@ jobs:
           push: true
           tags: ${{ steps.tags.outputs.tags }}
 
-      - name: Generate changelog
+      - name: "✏️ Generate release changelog"
         id: changelog
-        run: |
-          # Find the previous tag (if any)
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "none")
-          if [ "$PREV_TAG" != "none" ]; then
-            echo "Generating changelog since $PREV_TAG"
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD)
-          else
-            echo "No previous tag found. Generating changelog from all commits."
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)")
-          fi
-
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+        uses: janheinrichmerker/action-github-changelog-generator@v2.3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} 
 
       - name: Create GitHub Release
         uses: actions/create-release@v1

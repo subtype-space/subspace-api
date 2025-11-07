@@ -58,8 +58,6 @@ jobs:
           body: |
             # Release Notes
             This release corresponds to tag **${{ github.ref_name }}**.
-
-            ## Changelog
             ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: ${{ startsWith(github.ref_name, 'rc-') }}

@@ -1,14 +1,16 @@
 import rateLimit, { RateLimitRequestHandler } from 'express-rate-limit'
-import { Request } from 'express-jwt' // this ideally should come after the custom auth middleware
 import { logger } from './logger.js'
-import { Response } from 'express'
+import { Request, Response } from 'express'
 
 function isAuthenticated(req: Request): boolean {
-  return Boolean(req.auth?.sub || req?.kauth?.grant?.access_token?.content?.sub)
+  return Boolean(req?.kauth?.grant?.access_token?.content?.sub)
 }
 
 function getSessionId(req: Request): string {
-  return req.auth?.sub ? `session-${req.auth.sub}` : (req.kauth?.grant?.access_token?.content?.sub ?? `anon-session-${req.ip}`)
+  const keycloakSub = req.kauth?.grant?.access_token?.content?.sub
+  return keycloakSub
+    ? `session-${keycloakSub}`
+    : `anon-session-${req.ip}`
 }
 
 export const rateLimiter: RateLimitRequestHandler = rateLimit({

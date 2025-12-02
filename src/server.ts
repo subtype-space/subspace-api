@@ -1,7 +1,6 @@
 import './utils/env.js' // I hate how I have to do this but whatever. Stupid shim.
 import { logger } from './utils/logger.js'
-import express, { NextFunction, Response } from 'express'
-import { Request } from 'express-jwt'
+import express, { Request, NextFunction, Response } from 'express'
 import trmnlRouter from './v1/routers/trmnlRouter.js'
 import statusRouter from './v1/routers/statusRouter.js'
 import helmet from 'helmet'
@@ -19,14 +18,17 @@ import { logIncomingAuth } from './utils/auth.js'
 import { rateLimiter } from './utils/rateLimiter.js'
 
 logger.info('Initializing MCP server...')
-const mcpServer = new McpServer({
-  name: 'subspace-mcp-server',
-  version: '1.0.0',
-  capabilities: {
-    resources: {},
-    tools: {},
+const mcpServer = new McpServer(
+  {
+    name: 'subspace-mcp-server',
+    version: '1.0.0',
   },
-})
+  {
+    capabilities: {
+      tools: {},
+    },
+  }
+)
 logger.debug(mcpServer)
 const server = express()
 const PORT = process.env.PORT || 9595
@@ -48,8 +50,8 @@ server.use(
     saveUninitialized: true,
     store: memoryStore,
     cookie: {
-      secure: true // Setting this to true requires trust proxy set in express
-    }
+      secure: true, // Setting this to true requires trust proxy set in express
+    },
   })
 )
 server.use(keycloak.middleware())
@@ -106,7 +108,7 @@ server.post('/messages', logIncomingAuth, keycloak.protect(), async (req: Reques
   const transport = transports[sessionId]
   if (transport) {
     logger.info(`${transport.sessionId} has an active session`)
-    await transport.handlePostMessage(req, res, req.body) // don't remove req.body otherwise MCP inspector will panik
+    await transport.handlePostMessage(req, res) // don't remove req.body otherwise MCP inspector will panik
   } else {
     logger.warn(`${sessionId} was not found`)
     res.status(400).send('Requested sessionId not found')
@@ -116,16 +118,16 @@ server.post('/messages', logIncomingAuth, keycloak.protect(), async (req: Reques
 // discord activity auth
 // Discord enpoint to return oauth2 token after user authentication
 server.post('/discord/token', logIncomingAuth, async (req, res) => {
-    // Exchange the code for an access_token
+  // Exchange the code for an access_token
   const response = await fetch(`https://discord.com/api/oauth2/token`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
       client_id: process.env.ACTIVITY_DISCORD_CLIENT_ID!,
       client_secret: process.env.ACTIVITY_DISCORD_CLIENT_SECRET!,
-      grant_type: "authorization_code",
+      grant_type: 'authorization_code',
       code: req.body.code,
     }),
   })

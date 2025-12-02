@@ -7,7 +7,17 @@ import { getIncidents, getStationInfo, getBusInfo } from './metro.js'
 import { logger } from '../../utils/logger.js'
 
 
-export function registerTools(mcpServer: McpServer) {
+type SimpleToolRegistrar = {
+  tool: (
+    name: string,
+    description: string,
+    schema: Record<string, z.ZodTypeAny>,
+    // you can keep this loose – we only care that it’s callable
+    handler: (args: any, request?: any) => Promise<any> | any
+  ) => unknown
+}
+
+export function registerTools(mcpServer: SimpleToolRegistrar) {
   mcpServer.tool(
     'get-alerts',
     'Retrieves active weather alerts for a specific US state (e.g. tornado watches, heat advisories).',

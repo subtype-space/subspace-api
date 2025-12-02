@@ -85,7 +85,7 @@ server.use(function (err: any, req: Request, res: Response, next: NextFunction) 
 
 // MCP Setup
 // Discovery endpoint
-server.get('/sse', logIncomingAuth, keycloak.protect(), async (req: Request, res: Response) => {
+server.get('/sse', logIncomingAuth,  async (req: Request, res: Response) => {
   const transport = new SSEServerTransport('/messages', res)
   transports[transport.sessionId] = transport
   logger.info('New MCP session created:', transport.sessionId)
@@ -97,7 +97,7 @@ server.get('/sse', logIncomingAuth, keycloak.protect(), async (req: Request, res
 })
 
 // MCP Handler
-server.post('/messages', logIncomingAuth, keycloak.protect(), async (req: Request, res: Response) => {
+server.post('/messages', logIncomingAuth, async (req: Request, res: Response) => {
   const sessionId = req.query.sessionId as string
 
   if (typeof sessionId != 'string') {

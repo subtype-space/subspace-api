@@ -10,8 +10,9 @@ import KeycloakConnect from 'keycloak-connect'
 import { keycloakConfig } from './configs/keycloakConfig.js'
 
 // MCP import shenanigans
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+import { randomUUID } from "crypto"
 import { registerTools } from './v1/mcp/registerTools.js'
 
 import { logIncomingAuth } from './utils/auth.js'
@@ -29,17 +30,25 @@ const mcpServer = new McpServer(
     },
   }
 )
+
+const mcpTransport = new StreamableHTTPServerTransport({
+  sessionIdGenerator: () => randomUUID(),
+});
+
+
 logger.debug(mcpServer)
 const server = express()
 const PORT = process.env.PORT || 9595
 const ACTIVE_VERSION = process.env.API_VERSION || 'v1'
-// Register and enable model context protocol tools
-const transports: { [sessionId: string]: SSEServerTransport } = {}
+
+
 const memoryStore = new session.MemoryStore()
 const keycloak = new KeycloakConnect({ store: memoryStore }, keycloakConfig)
 
 logger.info('Registering tools with MCP server...')
 registerTools(mcpServer)
+
+await mcpServer.connect(mcpTransport)
 
 logger.info('Setting up middleware...')
 // SESSION_SECRET should just be a super long random base64 encoded string
@@ -57,7 +66,7 @@ server.use(
 server.use(keycloak.middleware())
 server.use(helmet())
 server.use(rateLimiter)
-server.use(express.json())
+
 
 // Declare regular REST API routing
 logger.info('Initializing routes...')
@@ -84,36 +93,23 @@ server.use(function (err: any, req: Request, res: Response, next: NextFunction) 
 })
 
 // MCP Setup
-// Discovery endpoint
-server.get('/sse', logIncomingAuth,  async (req: Request, res: Response) => {
-  const transport = new SSEServerTransport('/messages', res)
-  transports[transport.sessionId] = transport
-  logger.info('New MCP session created:', transport.sessionId)
-  res.on('close', () => {
-    logger.info('Closing session', transport.sessionId)
-    delete transports[transport.sessionId]
-  })
-  await mcpServer.connect(transport)
-})
-
-// MCP Handler
-server.post('/messages', logIncomingAuth, async (req: Request, res: Response) => {
-  const sessionId = req.query.sessionId as string
-
-  if (typeof sessionId != 'string') {
-    logger.error('Bad sessionId', sessionId)
-    res.status(400).send({ message: 'Bad sessionId' })
+server.all(
+  "/mcp",
+  logIncomingAuth,
+  keycloak.protect(),
+  express.json(),     
+  async (req, res) => {
+    try {
+      await mcpTransport.handleRequest(req, res, req.body);
+    } catch (err) {
+      logger.error("MCP transport error:", err);
+      res.status(500).json({
+        error: "MCP transport failure"
+      });
+    }
   }
+);
 
-  const transport = transports[sessionId]
-  if (transport) {
-    logger.info(`${transport.sessionId} has an active session`)
-    await transport.handlePostMessage(req, res) // don't remove req.body otherwise MCP inspector will panik
-  } else {
-    logger.warn(`${sessionId} was not found`)
-    res.status(400).send('Requested sessionId not found')
-  }
-})
 
 // discord activity auth
 // Discord enpoint to return oauth2 token after user authentication

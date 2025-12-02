@@ -17,6 +17,7 @@ type SimpleToolRegistrar = {
   ) => unknown
 }
 
+
 export function registerTools(mcpServer: SimpleToolRegistrar) {
   mcpServer.tool(
     'get-alerts',

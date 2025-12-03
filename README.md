@@ -1,5 +1,5 @@
 # subspace-api
-subspace-api is an express-based RESTful API and Model Context Protocol (MCP) server.
+subspace-api is an express-based RESTful API and stateless Model Context Protocol (MCP) server.
 
 If you are utilizing this API provided and hosted by us, please be sure to abide by the [TOS](https://wiki.subtype.space/s/tos). Otherwise, you are free to clone and self host provided you abide by the GNU GPLv3 license, and the TOS will not pertain to you!
 

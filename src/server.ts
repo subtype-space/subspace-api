@@ -12,7 +12,6 @@ import { keycloakConfig } from './configs/keycloakConfig.js'
 // MCP import shenanigans
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
-import { randomUUID } from 'crypto'
 import { registerTools } from './v1/mcp/registerTools.js'
 
 import { logIncomingAuth } from './utils/auth.js'
@@ -45,7 +44,16 @@ const keycloak = new KeycloakConnect({ store: memoryStore }, keycloakConfig)
 
 logger.info('Registering tools with MCP server...')
 registerTools(mcpServer)
-await mcpServer.connect(mcpTransport)
+
+try {
+  await mcpServer.connect(mcpTransport)
+  logger.info('MCP server is ready')
+} catch (err) {
+  logger.error('There was an error connecting the MCP server to transport', err)
+}
+
+// reverse proxy -- removing this will cause issues with secure cookies
+server.set('trust proxy', 1)
 
 logger.info('Setting up middleware...')
 // SESSION_SECRET should just be a super long random base64 encoded string
@@ -63,7 +71,7 @@ server.use(
 server.use(keycloak.middleware())
 server.use(helmet())
 server.use(rateLimiter)
-
+server.use(express.json())
 // Declare regular REST API routing
 logger.info('Initializing routes...')
 
@@ -71,8 +79,6 @@ logger.info('Initializing routes...')
 server.use('/', statusRouter)
 server.use('/health', express.json(), statusRouter)
 
-// reverse proxy -- removing this will cause issues with secure cookies
-server.set('trust proxy', 1)
 
 server.use(function (err: any, req: Request, res: Response, next: NextFunction) {
   logger.debug(err)
@@ -89,15 +95,14 @@ server.use(function (err: any, req: Request, res: Response, next: NextFunction) 
 })
 
 // MCP Setup - stateless
-server.all('/mcp', logIncomingAuth, keycloak.protect(), express.json(), async (req, res) => {
+server.all('/mcp', logIncomingAuth, keycloak.protect(), async (req, res) => {
   try {
-    const sessionId = req.headers['mcp-session-id']
-    logger.debug(`Found existing MCP session ${sessionId}`)
     await mcpTransport.handleRequest(req, res, req.body)
   } catch (err) {
     logger.error('MCP transport error:', err)
     res.status(500).json({
       error: 'MCP transport failure',
+      detail: err
     })
   }
 })

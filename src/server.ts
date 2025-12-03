@@ -34,23 +34,25 @@ const mcpServer = new McpServer(
 const mcpTransport = new StreamableHTTPServerTransport({
   sessionIdGenerator: undefined,
 })
+logger.info('Registering tools with MCP server...')
+registerTools(mcpServer)
 
+let mcpReady = false
+try {
+  await mcpServer.connect(mcpTransport)
+  logger.info('MCP server is ready')
+  mcpReady = true
+} catch (err) {
+  logger.error('There was an error connecting the MCP server to transport', err)
+}
 logger.debug(mcpServer)
+
+// Express setup
 const server = express()
 const PORT = process.env.PORT || 9595
 const ACTIVE_VERSION = process.env.API_VERSION || 'v1'
 const memoryStore = new session.MemoryStore()
 const keycloak = new KeycloakConnect({ store: memoryStore }, keycloakConfig)
-
-logger.info('Registering tools with MCP server...')
-registerTools(mcpServer)
-
-try {
-  await mcpServer.connect(mcpTransport)
-  logger.info('MCP server is ready')
-} catch (err) {
-  logger.error('There was an error connecting the MCP server to transport', err)
-}
 
 // reverse proxy -- removing this will cause issues with secure cookies
 server.set('trust proxy', 1)
@@ -79,7 +81,7 @@ logger.info('Initializing routes...')
 server.use('/', statusRouter)
 server.use('/health', express.json(), statusRouter)
 
-
+// custom error handler
 server.use(function (err: any, req: Request, res: Response, next: NextFunction) {
   logger.debug(err)
 
@@ -107,6 +109,16 @@ server.all('/mcp', logIncomingAuth, keycloak.protect(), async (req, res) => {
   }
 })
 
+server.get('/mcp/health', async (_: Request, res: Response) => {
+  if (!mcpReady) {
+    res.status(503).json({
+      status: 'unhealthy',
+      reason: 'MCP server not connected to transport'
+    })
+  }
+  res.status(200).json({ status: 'ok' })
+})
+
 // discord activity auth
 // Discord enpoint to return oauth2 token after user authentication
 server.post('/discord/token', logIncomingAuth, async (req, res) => {
@@ -130,6 +142,8 @@ server.post('/discord/token', logIncomingAuth, async (req, res) => {
   // Return the access_token to our client as { access_token: "..."}
   res.send({ access_token })
 })
+
+
 
 // oauth
 server.get('/.well-known/oauth-protected-resource', async (_: Request, res: Response) => {

@@ -10,15 +10,15 @@ import KeycloakConnect from 'keycloak-connect'
 import { keycloakConfig } from './configs/keycloakConfig.js'
 
 // MCP import shenanigans
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
-import { randomUUID } from "crypto"
+import { randomUUID } from 'crypto'
 import { registerTools } from './v1/mcp/registerTools.js'
 
 import { logIncomingAuth } from './utils/auth.js'
 import { rateLimiter } from './utils/rateLimiter.js'
 
-logger.info('Initializing MCP server...')
+logger.info('Initializing stateless MCP server...')
 const mcpServer = new McpServer(
   {
     name: 'subspace-mcp-server',
@@ -31,23 +31,20 @@ const mcpServer = new McpServer(
   }
 )
 
+// Create transport stateless
 const mcpTransport = new StreamableHTTPServerTransport({
-  sessionIdGenerator: () => randomUUID(),
-});
-
+  sessionIdGenerator: undefined,
+})
 
 logger.debug(mcpServer)
 const server = express()
 const PORT = process.env.PORT || 9595
 const ACTIVE_VERSION = process.env.API_VERSION || 'v1'
-
-
 const memoryStore = new session.MemoryStore()
 const keycloak = new KeycloakConnect({ store: memoryStore }, keycloakConfig)
 
 logger.info('Registering tools with MCP server...')
 registerTools(mcpServer)
-
 await mcpServer.connect(mcpTransport)
 
 logger.info('Setting up middleware...')
@@ -66,7 +63,6 @@ server.use(
 server.use(keycloak.middleware())
 server.use(helmet())
 server.use(rateLimiter)
-
 
 // Declare regular REST API routing
 logger.info('Initializing routes...')
@@ -92,24 +88,19 @@ server.use(function (err: any, req: Request, res: Response, next: NextFunction) 
   }
 })
 
-// MCP Setup
-server.all(
-  "/mcp",
-  logIncomingAuth,
-  keycloak.protect(),
-  express.json(),     
-  async (req, res) => {
-    try {
-      await mcpTransport.handleRequest(req, res, req.body);
-    } catch (err) {
-      logger.error("MCP transport error:", err);
-      res.status(500).json({
-        error: "MCP transport failure"
-      });
-    }
+// MCP Setup - stateless
+server.all('/mcp', logIncomingAuth, keycloak.protect(), express.json(), async (req, res) => {
+  try {
+    const sessionId = req.headers['mcp-session-id']
+    logger.debug(`Found existing MCP session ${sessionId}`)
+    await mcpTransport.handleRequest(req, res, req.body)
+  } catch (err) {
+    logger.error('MCP transport error:', err)
+    res.status(500).json({
+      error: 'MCP transport failure',
+    })
   }
-);
-
+})
 
 // discord activity auth
 // Discord enpoint to return oauth2 token after user authentication

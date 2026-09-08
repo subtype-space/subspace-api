@@ -42,6 +42,7 @@ function renderSettingsPage(opts: {
           value="${escapeHtml(opts.flightNumbers)}"
           placeholder="UA804, DL123"
           autocomplete="off"
+          autocorrect="off"
           autocapitalize="characters"
           spellcheck="false"
         />
@@ -114,7 +115,7 @@ export const flightManagePostController: RequestHandler = async (req, res) => {
 
   const flights = rawStr
     .split(',')
-    .map((s: string) => s.trim().toUpperCase())
+    .map((s: string) => s.replace(/\s+/g, '').toUpperCase())
     .filter(Boolean)
 
   const settings = await getFlightSettingsByUuid(uuid)

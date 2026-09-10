@@ -9,12 +9,12 @@
 {% assign gap_px = 34 | times: cs | round %}
 {% assign subtitle_px = 15 | times: cs | round %}
 {% assign cup_scale = 1.6 | times: cs %}
-<div class="layout">
-  <div class="coffee-content flex flex--row flex--center-x flex--center-y w--full h--full" style="gap:calc({{ gap_px }}px * var(--s, 1))">
+<div class="layout layout--row">
+  <div class="coffee-content flex flex--row portrait:flex--col flex--center-x flex--center-y w--full h--full" style="gap:calc({{ gap_px }}px * var(--s, 1))">
     {% render "cup", ingredients: ingredients, total_ml: total_ml, scale: cup_scale %}
     <div class="coffee-meta">
-      <h3 class="coffee-title" style="font-size:calc({{ title_px }}px * var(--s, 1))">{{ name }}</h3>
-      <p class="coffee-subtitle" style="font-size:calc({{ subtitle_px }}px * var(--s, 1))">{{ ingredients.size }} ingredient{% if ingredients.size > 1 %}s{% endif %}</p>
+      <h3 class="coffee-title" style="--fs:{{ title_px }}">{{ name }}</h3>
+      <div class="coffee-subtitle" style="--fs:{{ subtitle_px }}">{{ ingredients.size }} ingredient{% if ingredients.size > 1 %}s{% endif %}</div>
     </div>
   </div>
 </div>

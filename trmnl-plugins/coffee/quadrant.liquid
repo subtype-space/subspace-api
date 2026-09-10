@@ -1,24 +1,21 @@
-{% capture title_px_raw %}{% render "title_fit", name: name, target_w: 93, c: 0.72, min_px: 9, max_px: 18 %}{% endcapture %}
+{% comment %} 400x240 (520x390 on X) — no room for the ingredient list, a count stands in for it.
+  See full.liquid for how title_fit/count_scale work; target_w is this variant's real measured
+  column width. Only div.layout + div.title_bar are authored here — TRMNL's platform injects the
+  view/view--quadrant wrapper itself. {% endcomment %}
+{% capture title_px_raw %}{% render "title_fit", name: name, target_w: 260, c: 0.72, min_px: 9, max_px: 20 %}{% endcapture %}
 {% assign title_px = title_px_raw | strip | times: 1.5 | round %}
 {% capture cs_raw %}{% render "count_scale", ingredients: ingredients %}{% endcapture %}
 {% assign cs = cs_raw | strip | times: 1.0 %}
 {% assign gap_px = 34 | times: cs | round %}
 {% assign subtitle_px = 15 | times: cs | round %}
 {% assign cup_scale = 1.6 | times: cs %}
-<div class="view view--quadrant">
-  <div class="layout">
-    <div class="columns">
-      <div class="column">
-        <div class="markdown" style="height:100%;display:flex;align-items:center;">
-          <div class="coffee-content coffee-layout" style="gap:calc({{ gap_px }}px * var(--s, 1))">
-            {% render "cup", ingredients: ingredients, total_ml: total_ml, scale: cup_scale %}
-            <div class="coffee-meta">
-              <h3 class="coffee-title" style="font-size:calc({{ title_px }}px * var(--s, 1))">{{ name }}</h3>
-              <p class="coffee-subtitle" style="font-size:calc({{ subtitle_px }}px * var(--s, 1))">{{ ingredients.size }} ingredient{% if ingredients.size > 1 %}s{% endif %}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+<div class="layout">
+  <div class="coffee-content flex flex--row flex--center-x flex--center-y w--full h--full" style="gap:calc({{ gap_px }}px * var(--s, 1))">
+    {% render "cup", ingredients: ingredients, total_ml: total_ml, scale: cup_scale %}
+    <div class="coffee-meta">
+      <h3 class="coffee-title" style="font-size:calc({{ title_px }}px * var(--s, 1))">{{ name }}</h3>
+      <p class="coffee-subtitle" style="font-size:calc({{ subtitle_px }}px * var(--s, 1))">{{ ingredients.size }} ingredient{% if ingredients.size > 1 %}s{% endif %}</p>
     </div>
   </div>
 </div>
+

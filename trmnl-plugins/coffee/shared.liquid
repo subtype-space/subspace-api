@@ -1,11 +1,16 @@
 <style>
-  .coffee-content { font-family: "Helvetica Neue", "Helvetica Now Text", Arial, sans-serif; --s: 1; }
+  {% comment %} Helvetica Neue/Arial aren't in TRMNL's own @font-face list — only "Inter Variable"
+    (their base UI font, confirmed self-hosted) and their pixel fonts are guaranteed to actually
+    load on their render server, so the old stack was silently falling through to a generic
+    default instead of what we asked for. {% endcomment %}
+  .coffee-content { font-family: "Inter Variable", Inter, sans-serif; --s: 1; }
   .screen--lg .coffee-content { --s: 1.3; }
-  .coffee-layout { display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; width: 100%; }
-  .coffee-layout.stack { flex-direction: column; }
-  .coffee-layout.stack .coffee-title { text-align: center; } /* row layouts stay left-aligned, matching the list below them */
-  .coffee-meta { flex: 0 1 auto; min-width: 90px; }
+  .coffee-title--center { text-align: center; } /* half_vertical only — row layouts stay left-aligned, matching the list below them */
 
+  {% comment %} This is a bold graphic rule, not a generic content separator — kept as a plain
+    border rather than the framework's .divider--h (a fixed thin hairline via a border token, not
+    resizable) or the Paint API (its crisper-rendering benefit is for dithered *gray* lines; this
+    is solid black, already pixel-perfect under plain CSS on any bit depth). {% endcomment %}
   .coffee-title {
     font-weight: 800;
     letter-spacing: -0.5px;
@@ -29,8 +34,8 @@
     position: relative;
     max-height: 100%; /* safety cap: a maxed-out glass (360ml) in a short layout would otherwise overflow */
   }
-  .vessel-demitasse { border-radius: 0 0 8px 8px; }
-  .vessel-mug { border-radius: 0 0 14px 14px; }
+  .vessel-mug { border-top-width: 6px; } /* thicker rim — rounded bottom corners come from the rounded-b--[Npx] framework class in markup */
+  .mug-handle { position: absolute; left: 0; top: 0; height: 100%; overflow: visible; pointer-events: none; } /* width is set inline per-cup — wider than the cup itself so the handle bulge shows past its right edge */
   /* glass + martini aren't rectangles — an SVG draws the outline (its stroke follows the path
      exactly), and a same-shaped clip-path div underneath carries the liquid layers */
   .vessel-glass, .vessel-martini { border: none; overflow: visible; }
@@ -92,14 +97,19 @@
 
 {% comment %} Grayscale palette — the e-ink panel has no color mode, so this is the real palette,
   not a simulation. OG panels are 1-bit/2-bit: only ~4 distinguishable levels actually exist on
-  the device, so this uses exactly 4 stops (black/dark/light/white) snapped to where a 2-bit panel
-  quantizes (0/85/170/255) instead of continuous in-between values a real panel would just round
-  away — two "different" grays that both round to the same bucket is how Foamed Milk and Steamed
-  Milk merged into one block on-device (the divider in the CSS above is the other half of that
-  fix). Darkest = most concentrated (espresso), lightest = airiest (whipped cream). "vanilla ice
-  cream" must stay ahead of the bare "ice" check, or every Affogato's scoop would render as an ice
-  cube instead of its own tone. {% endcomment %}
-{% template ingredient_color %}{% assign l = label | downcase %}{% if l contains 'espresso' %}#000000{% elsif l contains 'brewed coffee' or l contains 'french pressed' or l contains 'iced coffee' or l contains 'coffee liqueur' or l contains 'chocolate' or l contains 'caramel' or l contains 'whiskey' or l contains 'brandy' %}#555555{% elsif l contains 'half & half' or l contains 'steamed milk' or l contains 'scalded milk' or l contains 'condensed milk' or l contains 'sugar' or l contains 'vodka' %}#aaaaaa{% elsif l contains 'foam' or l contains 'lemon' or l contains 'vanilla ice cream' or l contains 'ice' or l contains 'hot water' or l contains 'whipped cream' %}#ffffff{% else %}#aaaaaa{% endif %}{% endtemplate %}
+  the device, so this uses stops snapped to where a 2-bit panel quantizes (0/85/170/255) instead
+  of continuous in-between values a real panel would just round away — two "different" grays that
+  both round to the same bucket is how Foamed Milk and Steamed Milk merged into one block
+  on-device (the divider in the CSS above is the other half of that fix).
+
+  Pure black (0) is reserved for the outline/border/text — never assigned to an ingredient. Espresso
+  used to BE pure black, which on the mug's SVG outline (also black, stroke overlapping the fill at
+  the shape's edge) made a thin espresso layer visually fuse into the border and disappear/look
+  clipped. So content only uses the 3 stops lighter than pure black: dark/light/white. Darkest
+  content = most concentrated (espresso), lightest = airiest (whipped cream). "vanilla ice cream"
+  must stay ahead of the bare "ice" check, or every Affogato's scoop would render as an ice cube
+  instead of its own tone. {% endcomment %}
+{% template ingredient_color %}{% assign l = label | downcase %}{% if l contains 'espresso' or l contains 'brewed coffee' or l contains 'french pressed' or l contains 'iced coffee' or l contains 'coffee liqueur' or l contains 'chocolate' or l contains 'caramel' or l contains 'whiskey' or l contains 'brandy' %}#555555{% elsif l contains 'half & half' or l contains 'steamed milk' or l contains 'scalded milk' or l contains 'condensed milk' or l contains 'sugar' or l contains 'vodka' %}#aaaaaa{% elsif l contains 'foam' or l contains 'lemon' or l contains 'vanilla ice cream' or l contains 'ice' or l contains 'hot water' or l contains 'whipped cream' %}#ffffff{% else %}#aaaaaa{% endif %}{% endtemplate %}
 
 {% comment %}
   Renders the cup: classifies a vessel shape from the ingredients, sizes it from total_ml, then
@@ -141,7 +151,10 @@
   {% when 'demitasse' %}{% assign minw = 30 %}{% assign maxw = 42 %}{% assign minh = 36 %}{% assign maxh = 54 %}
   {% when 'glass' %}{% assign minw = 40 %}{% assign maxw = 58 %}{% assign minh = 84 %}{% assign maxh = 144 %}
   {% when 'martini' %}{% assign minw = 58 %}{% assign maxw = 82 %}{% assign minh = 56 %}{% assign maxh = 92 %}
-{% else %}{% assign minw = 42 %}{% assign maxw = 62 %}{% assign minh = 64 %}{% assign maxh = 130 %}
+{% else %}{% comment %} width:height ~1.077, matching Lucide's "coffee" icon cup body (measured:
+  14x13, excluding the handle). Width kept close to the old range so the cup's footprint in the
+  layout doesn't change (~24% of view width at a typical recipe) — only the height/ratio changes,
+  making it squat instead of the old up-to-2x-taller-than-wide tumbler shape. {% endcomment %}{% assign minw = 40 %}{% assign maxw = 64 %}{% assign minh = 37 %}{% assign maxh = 59 %}
 {% endcase %}
 {% assign t = total_ml | minus: 15 | times: 1.0 | divided_by: 345 %}
 {% if t < 0 %}{% assign t = 0 %}{% endif %}
@@ -183,8 +196,84 @@
       </div>
     {% endif %}
   </div>
+{% elsif vessel == 'mug' %}
+  {% comment %} Lucide's "coffee" icon, steam removed, translated so the cup body starts at (0,0)
+    — full replace of the earlier hand-drawn/FontAwesome attempts per direct request. One SVG
+    does everything (fill via clipPath + stroked outline) rather than the old separate cup-div +
+    sibling-handle-SVG split, since fill and stroke can share one element here. viewBox is sized
+    to the FULL glyph (cup+handle, 19x13) so the handle shows past the cup's own 14-unit-wide
+    body; layers are positioned as rects (SVG has no flexbox) stacked bottom-up to match pour
+    order, and clipped to the cup-only path so nothing paints into the handle. has_ice is never
+    true here (ice routes to the glass vessel), so no ice-cube handling is needed.
+
+    The fill clip is the EXACT same path as the outline (no separate radius) — an earlier attempt
+    used a smaller radius for the fill, but that made the fill's straight edge run longer than the
+    outline's before curving, so the fill actually poked outside the outline's own boundary in the
+    zone between the two curves. Fixed at the source instead: the bottom-most layer is floored to
+    at least 4 of 13 units tall (exactly where the outline's own straight run ends and its radius-4
+    curve begins, see the outline path below) so it's never thinner than the corner radius and never
+    dips into the curved zone at all. The difference is borrowed proportionally from the other
+    layers. Thin bottom layers (e.g. Cafe Latte's 60ml espresso under 300ml milk) were the case
+    this was breaking on. {% endcomment %}
+  {% assign handle_w = width | times: 1.357 %}
+  {% assign shown_total = 0 %}
+  {% assign shown_count = 0 %}
+  {% assign bottom_ml = 0 %}
+  {% for ing in ingredients %}
+    {% assign l = ing.label | downcase %}
+    {% unless l == 'ice' %}
+      {% assign shown_total = shown_total | plus: ing.ml %}
+      {% assign shown_count = shown_count | plus: 1 %}
+      {% if shown_count == 1 %}{% assign bottom_ml = ing.ml %}{% endif %}
+    {% endunless %}
+  {% endfor %}
+  {% assign min_bottom_h = 4.0 %}
+  {% assign others_ml = shown_total | minus: bottom_ml %}
+  {% if shown_count == 1 %}
+    {% assign bottom_h = 13.0 %}
+    {% assign others_budget = 0 %}
+  {% else %}
+    {% assign bottom_natural_h = bottom_ml | times: 1.0 | divided_by: shown_total | times: 13 %}
+    {% if bottom_natural_h < min_bottom_h %}
+      {% assign bottom_h = min_bottom_h %}
+    {% else %}
+      {% assign bottom_h = bottom_natural_h %}
+    {% endif %}
+    {% assign others_budget = 13.0 | minus: bottom_h %}
+  {% endif %}
+  <div class="relative shrink-0">
+    <svg viewBox="0 0 19 13" preserveAspectRatio="none" style="width:calc({{ handle_w }}px * var(--s, 1));height:calc({{ height }}px * var(--s, 1));max-height:100%">
+      <defs>
+        <clipPath id="mugclip" clipPathUnits="userSpaceOnUse">
+          <path d="M13 0a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V1a1 1 0 0 1 1-1h12z" />
+        </clipPath>
+      </defs>
+      <g clip-path="url(#mugclip)">
+        {% assign y_cursor = 13.0 %}
+        {% assign idx = 0 %}
+        {% for ing in ingredients %}
+          {% assign l = ing.label | downcase %}
+          {% unless l == 'ice' %}
+            {% assign idx = idx | plus: 1 %}
+            {% capture color %}{% render "ingredient_color", label: ing.label %}{% endcapture %}
+            {% if idx == 1 %}
+              {% assign layer_h = bottom_h %}
+            {% else %}
+              {% assign layer_h = ing.ml | times: 1.0 | divided_by: others_ml | times: others_budget %}
+            {% endif %}
+            {% assign y_top = y_cursor | minus: layer_h %}
+            <rect x="0" y="{{ y_top }}" width="19" height="{{ layer_h }}" fill="{{ color | strip }}" />
+            {% unless forloop.last %}<line x1="0" y1="{{ y_top }}" x2="19" y2="{{ y_top }}" style="stroke:#111;stroke-width:0.4" />{% endunless %}
+            {% assign y_cursor = y_top %}
+          {% endunless %}
+        {% endfor %}
+      </g>
+      <path d="M13 0a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V1a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" style="fill:none;stroke:#111;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" />
+    </svg>
+  </div>
 {% else %}
-  <div class="cup vessel-{{ vessel }}" style="width:calc({{ width }}px * var(--s, 1));height:calc({{ height }}px * var(--s, 1))">
+  {% comment %} only demitasse reaches here — mug has its own branch above {% endcomment %}
+  <div class="cup vessel-{{ vessel }} rounded-b--[8px]" style="width:calc({{ width }}px * var(--s, 1));height:calc({{ height }}px * var(--s, 1))">
     {% for ing in ingredients %}
       {% assign l = ing.label | downcase %}
       {% unless l == 'ice' %}

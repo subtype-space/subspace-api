@@ -1,24 +1,23 @@
-{% capture title_px_raw %}{% render "title_fit", name: name, target_w: 385, c: 0.72, min_px: 24, max_px: 78 %}{% endcapture %}
+{% comment %} 800x480 (1040x780 on X) — owns a whole screen, so cup + title get real breathing room.
+  Title font is solved from name length (title_fit) so short names get bigger type instead of
+  leaving dead space; gap/cup/list scale down for long ingredient lists (count_scale). Both
+  templates are in shared.liquid. target_w below is this variant's real measured column width.
+  Only div.layout + div.title_bar are authored here — TRMNL's platform injects the
+  view/view--full wrapper itself. {% endcomment %}
+{% capture title_px_raw %}{% render "title_fit", name: name, target_w: 480, c: 0.72, min_px: 24, max_px: 78 %}{% endcapture %}
 {% assign title_px = title_px_raw | strip | times: 1.0 | round %}
 {% capture cs_raw %}{% render "count_scale", ingredients: ingredients %}{% endcapture %}
 {% assign cs = cs_raw | strip | times: 1.0 %}
 {% assign gap_px = 64 | times: cs | round %}
 {% assign text_px = 30 | times: cs | round %}
 {% assign cup_scale = 3.8 | times: cs %}
-<div class="view view--full">
-  <div class="layout">
-    <div class="columns">
-      <div class="column">
-        <div class="markdown" style="height:100%;display:flex;align-items:center;">
-          <div class="coffee-content coffee-layout" style="gap:calc({{ gap_px }}px * var(--s, 1))">
-            {% render "cup", ingredients: ingredients, total_ml: total_ml, scale: cup_scale %}
-            <div class="coffee-meta">
-              <h3 class="coffee-title" style="font-size:calc({{ title_px }}px * var(--s, 1))">{{ name }}</h3>
-              {% render "ingredient_list", ingredients: ingredients, text_size: text_px %}
-            </div>
-          </div>
-        </div>
-      </div>
+<div class="layout">
+  <div class="coffee-content flex flex--row flex--center-x flex--center-y w--full h--full" style="gap:calc({{ gap_px }}px * var(--s, 1))">
+    {% render "cup", ingredients: ingredients, total_ml: total_ml, scale: cup_scale %}
+    <div class="coffee-meta">
+      <h3 class="coffee-title" style="font-size:calc({{ title_px }}px * var(--s, 1))">{{ name }}</h3>
+      {% render "ingredient_list", ingredients: ingredients, text_size: text_px %}
     </div>
   </div>
 </div>
+

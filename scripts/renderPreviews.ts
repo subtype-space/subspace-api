@@ -6,8 +6,10 @@ import type { MarkupVariant } from '../src/types/trmnl/types.js'
 import { config } from '../src/config.js'
 import { renderMarkup as renderFlight } from '../src/integrations/aerodatabox/renderer.js'
 import { renderMarkup as renderMetro } from '../src/integrations/wmata/renderer.js'
+import { renderMarkup as renderCoffee } from '../src/integrations/coffee/renderer.js'
 import { scenarios as flightScenarios } from './scenarios/flights.js'
 import { scenarios as metroScenarios } from './scenarios/metro.js'
+import { scenarios as coffeeScenarios } from './scenarios/coffee.js'
 
 const baseUrl = new URL(config.api.publicBaseUrl).origin
 
@@ -25,6 +27,13 @@ const plugins = [
     scenarios: metroScenarios.map((sc) => ({
       scenarioTitle: sc.title,
       render: (variant: MarkupVariant) => renderMetro(sc.markup, variant),
+    })),
+  },
+  {
+    title: 'Coffee of the Day',
+    scenarios: coffeeScenarios.map((sc) => ({
+      scenarioTitle: sc.title,
+      render: (variant: MarkupVariant) => renderCoffee(sc.recipe, variant),
     })),
   },
 ]

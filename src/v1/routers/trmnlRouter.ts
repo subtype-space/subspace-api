@@ -11,6 +11,7 @@ import flightInstallController from '../controllers/flights/flightInstallControl
 import { flightInstallSuccessController } from '../controllers/flights/flightInstallSuccessController.js'
 import { flightMarkupController } from '../controllers/flights/flightMarkupController.js'
 import { flightManageGetController, flightManagePostController } from '../controllers/flights/flightManageController.js'
+import { coffeeController } from '../controllers/coffee/coffeeController.js'
 import { logIncomingIP } from '../../utils/authLogger.js'
 const router = express.Router()
 
@@ -34,5 +35,8 @@ router.post('/flights/markup', express.urlencoded({ extended: true }), requireTr
 router.post('/flights/uninstall', requireTrmnlAuth, requireTrmnlUuidMatch, trmnlUninstallController)
 router.get('/flights/manage', requireTrmnlJwt, flightManageGetController)
 router.post('/flights/manage', express.urlencoded({ extended: true }), requireTrmnlJwt, flightManagePostController)
+
+// coffee does not have any lifecycle control since it is just returning data for the liquid markup
+router.get('/coffee', coffeeController)
 
 export default router

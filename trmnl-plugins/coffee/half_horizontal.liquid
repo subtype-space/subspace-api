@@ -1,0 +1,24 @@
+{% capture title_px_raw %}{% render "title_fit", name: name, target_w: 466, c: 0.72, min_px: 28, max_px: 92 %}{% endcapture %}
+{% assign title_px = title_px_raw | strip | times: 1.0 | round %}
+{% capture cs_raw %}{% render "count_scale", ingredients: ingredients %}{% endcapture %}
+{% assign cs = cs_raw | strip | times: 1.0 %}
+{% assign gap_px = 44 | times: cs | round %}
+{% assign text_px = 24 | times: cs | round %}
+{% assign cup_scale = 2.0 | times: cs %}
+<div class="view view--half_horizontal">
+  <div class="layout">
+    <div class="columns">
+      <div class="column">
+        <div class="markdown" style="height:100%;display:flex;align-items:center;">
+          <div class="coffee-content coffee-layout" style="gap:calc({{ gap_px }}px * var(--s, 1))">
+            {% render "cup", ingredients: ingredients, total_ml: total_ml, scale: cup_scale %}
+            <div class="coffee-meta">
+              <h3 class="coffee-title" style="font-size:calc({{ title_px }}px * var(--s, 1))">{{ name }}</h3>
+              {% render "ingredient_list", ingredients: ingredients, text_size: text_px %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

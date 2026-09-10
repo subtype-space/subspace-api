@@ -40,7 +40,10 @@ export const COFFEE_RECIPES: CoffeeRecipe[] = [
   { name: 'Latte Macchiato', ingredients: [{ label: 'Steamed Milk', ml: 270 }, { label: 'Espresso', ml: 30 }, { label: 'Milk Foam', ml: 60 }] },
 ]
 
-export function pickCurrentCoffee(date: Date = new Date()): CoffeeRecipe {
-  const fifteenMinBuckets = Math.floor(date.getTime() / (15 * 60 * 1000))
-  return COFFEE_RECIPES[fifteenMinBuckets % COFFEE_RECIPES.length]
+export function pickRandomCoffee(): CoffeeRecipe {
+  return COFFEE_RECIPES[Math.floor(Math.random() * COFFEE_RECIPES.length)]
+}
+
+export function findCoffeeByName(name: string): CoffeeRecipe | undefined {
+  return COFFEE_RECIPES.find((r) => r.name.toLowerCase() === name.toLowerCase())
 }
